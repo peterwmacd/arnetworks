@@ -31,6 +31,6 @@ devtools::install_github("peterwmacd/arnetworks")
 This is a basic example which shows you how to solve a common problem:
 
 ```{r example}
-#library(nettest)
+#library(arnetworks)
 ## basic example code
 ```
