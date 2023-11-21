@@ -28,9 +28,11 @@ devtools::install_github("peterwmacd/arnetworks")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+This is a basic example which shows you how to solve a common problem
 
 ```{r example}
 #library(arnetworks)
 ## basic example code
+
+
 ```
