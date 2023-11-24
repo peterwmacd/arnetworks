@@ -7,19 +7,19 @@ The goal of arnetworks is to …
 
 ## Installation
 
-You can install the development version of nettest from
+You can install the development version of arnetworks from
 [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("peterwmacd/arnetworks")
+# devtools::install_github("peterwmacd/arnetworks")
 ```
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+This is a basic example which shows you how to solve a common problem
 
 ``` r
-#library(nettest)
+#library(arnetworks)
 ## basic example code
 ```
