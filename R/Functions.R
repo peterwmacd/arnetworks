@@ -1,8 +1,6 @@
 logadj = function(x){
 
-  suppressWarnings(res <- ifelse(x<=0,log(0.001),log(x)))
-
-  return(res)
+  log(pmax(1e-5,x))
 
 }
 
