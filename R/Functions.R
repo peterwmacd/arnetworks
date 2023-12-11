@@ -157,7 +157,7 @@ thetafr = function(log_theta, thetaM){
 thetaEst = function(thetaME){
   # ThetaM: symmetric matrix with diagonal elements being zero.
   diag(thetaME) = 0
-  tmp = optim(rep(1, dim(thetaME)[1]), thetafr, method = 'BFGS', thetaM = thetaME)
+  tmp = stats::optim(rep(1, dim(thetaME)[1]), thetafr, method = 'BFGS', thetaM = thetaME)
   thetaE = exp(tmp$par)
 
   return(thetaE)
@@ -383,23 +383,24 @@ dl2dthetaidthetaj = function(Aij, Bij, Uij, Vij, a, b, thetai, thetaj){
 }
 
 
-alSearch = function(gMat, el, gamma){
-  r = length(el)
-  objective.in <- rep(1,2*r)
-
-  const.mat <- rbind(cbind(gMat,-gMat),cbind(-gMat,gMat),-diag(2*r))
-  const.dir <- "<="
-  const.rhs <- c(rep(1,r)*gamma+el,rep(1,r)*gamma-el,rep(0,2*r))
-  res <- lpSolve::lp(direction = "min",objective.in = objective.in, const.mat = const.mat,
-            const.dir = const.dir, const.rhs = const.rhs)
-  res.dir <- res$solution
-  a_l <- res.dir[1:r] - res.dir[-(1:r)]
-  return(a_l)
-}
+# alSearch = function(gMat, el, gamma){
+#   r = length(el)
+#   objective.in <- rep(1,2*r)
+#
+#   const.mat <- rbind(cbind(gMat,-gMat),cbind(-gMat,gMat),-diag(2*r))
+#   const.dir <- "<="
+#   const.rhs <- c(rep(1,r)*gamma+el,rep(1,r)*gamma-el,rep(0,2*r))
+#   res <- lpSolve::lp(direction = "min",objective.in = objective.in, const.mat = const.mat,
+#             const.dir = const.dir, const.rhs = const.rhs)
+#   res.dir <- res$solution
+#   a_l <- res.dir[1:r] - res.dir[-(1:r)]
+#   return(a_l)
+# }
 
 
 localMLE_refine_theta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etavec, i){
   thetai = par
+  p <- dim(A1)[1]
   a = ab[1]
   b = ab[2]
 
@@ -437,6 +438,7 @@ localMLE_refine_theta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, et
 
 localMLE_refine_eta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etavec, i){
   etai = par
+  p <- dim(A1)[1]
   a = ab[1]
   b = ab[2]
 
@@ -473,6 +475,7 @@ localMLE_refine_eta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etav
 }
 
 globalMLE_refine_a = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etavec){
+  p <- dim(A1)[1]
   a = par
   b = ab[2]
 
@@ -508,6 +511,7 @@ globalMLE_refine_a = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etave
 }
 
 globalMLE_refine_b = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etavec){
+  p <- dim(A1)[1]
   b = par
   a = ab[1]
 
