@@ -1,7 +1,10 @@
 # wrapper function for estimation with the transitivity model
 
-estim_transitivity <- function(X,iter=100,delta=1e-4,
-                               ab_init=NULL,thetamax_init=NULL,etamax_init=NULL){
+estim_transitivity <- function(X,
+                               # optimization parameters
+                               iter=100,delta=1e-4,
+                               # initializer tuning (w/ default values)
+                               ab_init=c(0,0),thetamax_init=1.2,etamax_init=1.2){
   # dimensions
   p <- dim(X)[1]
   n <- dim(X)[3]
