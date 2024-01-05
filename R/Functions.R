@@ -766,3 +766,83 @@ degree_stats <- function(X){
   }
   return(list(D=D,D_all=D_all))
 }
+
+# fitted model objects
+model_probs <- function(fit,stats,X){
+  # dimensions
+  p <- dim(X)[1]
+  n <- dim(X)[3]
+  # initialize array
+  alpha <- beta <- gamma <- array(NA,c(p,p,n-1))
+  # initialize outer product
+  Ttheta <- tcrossprod(fit$theta)
+  Eeta <- tcrossprod(fit$eta)
+  # hollowize matrices (diagonal estimates always zero)
+  Ttheta <- Ttheta - diag(diag(Ttheta))
+  Eeta <- Eeta - diag(diag(Eeta))
+  # populate
+  for(t in 1:(n-1)){
+    eaU <- exp(fit$a * stats$U[,,t])
+    ebV <- exp(fit$b * stats$V[,,t])
+    alpha[,,t] <- (Ttheta * eaU) / (1 + eaU + ebV)
+    beta[,,t] <- (Eeta * ebV) / (1 + eaU + ebV)
+    gamma[,,t] <- alpha[,,t] + X[,,t]*(1 - alpha[,,t] - beta[,,t])
+  }
+  return(list(alpha=alpha,beta=beta,gamma=gamma))
+}
+
+model_residuals <- function(probs,X){
+  # dimensions
+  p <- dim(X)[1]
+  n <- dim(X)[3]
+  # initialize array
+  eps <- array(NA,c(p,p,n-1))
+  # populate
+  for(t in 1:(n-1)){
+    c1 <- pmin(probs$alpha[,,t]/(1 - probs$beta[,,t]),1) # thresholding as a workaround for now
+    c2 <- pmin(probs$beta[,,t]/(1-probs$alpha[,,t]),1)
+    eps[,,t] <- c1*X[,,t]*X[,,t+1] - c2*(1-X[,,t])*(1-X[,,t+1]) + (1-X[,,t])*X[,,t+1] - X[,,t]*(1-X[,,t+1])
+  }
+  return(eps)
+}
+
+model_predict <- function(n_out,fit,stats_prev,X_prev){
+  # dimensions
+  p <- dim(X_prev)[1]
+  # initialize current observation
+  X_curr <- X_prev
+  stats_curr <- stats_prev
+  Ttheta <- tcrossprod(fit$theta)
+  Eeta <- tcrossprod(fit$eta)
+  # initialize array
+  X_out <- array(NA,c(p,p,n_out))
+  for(t in 1:n_out){
+    # predict
+    eaU <- exp(fit$a * stats_curr$U)
+    ebV <- exp(fit$b * stats_curr$V)
+    alpha <- (Ttheta * eaU) / (1 + eaU + ebV)
+    beta <- (Eeta * ebV) / (1 + eaU + ebV)
+    X_out[,,t] <- alpha + X_curr*(1 - alpha - beta)
+    if(t < n_out){
+      # update X
+      X_curr <- X_out[,,t]
+      # update U,V
+      U <- V <- matrix(0,p,p)
+      # populate U,V
+      for(i in 1:(p-1)){
+        for(j in (i+1):p){
+          tmp <- U[i,j] <- U[j,i] <- sum(X_curr[i,]*X_curr[j,])
+          V[i,j] <- V[j,i] <- (sum(X_curr[i,]+X_curr[j,])-2*tmp)/2
+        }
+      }
+      stats_curr <- list(U=U,V=V)
+    }
+  }
+  if(n_out==1){
+    return(X_out[,,1])
+  }
+  else{
+    return(X_out)
+  }
+}
+

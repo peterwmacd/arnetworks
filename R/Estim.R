@@ -27,8 +27,8 @@ estim_transitivity <- function(X,
   thetaE = thetaEst(thetaME)
   etaE =  thetaEst(etaME)
   if(verbose){
-    print(quantile(thetaE))
-    print(quantile(etaE))
+    print(stats::quantile(thetaE))
+    print(stats::quantile(etaE))
   }
 
   tmp0 = stats::optim(ab1, globalMLE_ab, gr = grr_globalMLE_ab, method = "L-BFGS-B",
@@ -58,8 +58,8 @@ estim_transitivity <- function(X,
     thetaE = thetaEst(thetaME)
     etaE = thetaEst(etaME)
     if(verbose){
-      print(quantile(thetaE))
-      print(quantile(etaE))
+      print(stats::quantile(thetaE))
+      print(stats::quantile(etaE))
     }
     thetaME = outer(thetaE, thetaE)
     etaME = outer(etaE, etaE)
@@ -103,8 +103,8 @@ estim_transitivity <- function(X,
       etaE[i] = stats::optim(etaE[i],  localMLE,  method = 'L-BFGS-B', Ai = A2[i,-i,] , Bi = B2[i,-i,], Ui = V[i,-i,], Vi=U[i,-i,], ab=c(ab1[2],ab1[1]), thetavec_ic= etaE[-i], lower  = c(delta), upper = min(etamax[i,-i]/etaE[-i]))$par
     }
     if(verbose){
-      print(quantile(thetaE))
-      print(quantile(etaE))
+      print(stats::quantile(thetaE))
+      print(stats::quantile(etaE))
     }
 
     tmp2 = stats::optim(ab1, globalMLE_ab, gr = grr_globalMLE_ab, method = "L-BFGS-B",

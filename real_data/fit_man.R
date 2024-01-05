@@ -6,6 +6,8 @@ load_all()
 
 # manufacturing network
 X_man <- readRDS('data/X_man.rds')
+p <- dim(X_man)[1]
+n <- dim(X_man)[3]
 # transitivity statistics
 UV_man <- transitivity_stats(X_man)
 # mean(U) ~ 1.42, 42% of entries 0
@@ -52,7 +54,7 @@ saveRDS(fit_man,file='data/fit_man.rds')
 
 # can fix this by either:
 # - bounding a,b so that exp(bV) and exp(aU) < Inf ### currently implemented
-# - bounding theta so that max(theta) < 1
+# - bounding theta so that max(theta) < 1 (but might still get infinite fn values with large a,b)
 
 #### Model interpretation ####
 
@@ -105,8 +107,62 @@ sd(tcrossprod(fit_man$eta) * summary_man[4])/prod(summary_man[3:4])  # 0.258
 # CoV is ~3x higher for formation probabilities vs dissolution probabilities, more
 # 'signal' to predict, but still good signal for dissolution
 
+#### analysis against metadata ####
+
 #### GOF ####
 
 # - formal goodness of fit?
 # - validation with link prediction? better than a naive model?
+
+# fitted flip probabilities
+probs_man <- arnetworks:::model_probs(fit_man,UV_man,X_man)
+
+# fitted residuals
+resid_man <- arnetworks:::model_residuals(probs_man,X_man)
+
+# backburner for now...
+
+# validation for density
+undir_scale <- (p^2) / (2*choose(p,2))
+obs_dens <- undir_scale*apply(X,3,mean)[-1]
+pred_dens <- undir_scale*apply(probs_man$gamma,3,mean)
+#pred_dens <- undir_scale*apply(X,3,mean)[-n]
+plot(pred_dens,obs_dens,xlim=c(.05,.15),ylim=c(.05,.15))
+abline(a=0,b=1,lty=2)
+abline(h=mean(obs_dens),lty=3)
+abline(v=mean(pred_dens),lty=3)
+# or better to plot a scatter over time
+plot(1:(n-1),obs_dens,xlab='Time',ylab='Edge density')
+lines(1:(n-1),pred_dens,col='red',type='p')
+
+# could do this with other statistics? triangles? etc.
+
+# validation for degree sequences
+par(mfrow=c(3,2))
+for(t in 1:(n-1)){
+  # plot observed degree sequence
+  plot(density(rowSums(X[,,t+1]),from=0,to=100),
+       main=paste0('Obs/Pred degree distribution, time ',t+1),
+       xlim=c(0,100),ylim=c(0,.1))
+  # plot estimated degree sequence
+  lines(density(rowSums(probs_man$gamma[,,t]),from=0,to=100),col='red')
+  # null comparison against bootstrap resampling (can use t+1, 'oracle' same distn,
+  # or t 'naive' prediction of degree distn)
+  #lines(density(sample(rowSums(X[,,t]),replace=TRUE),from=0,to=100),col='red')
+}
+
+#### link prediction ####
+
+# vary the size of training set
+# predict entire matrix then subset to just the upper triangle
+
+# model-based prediction: recursive step forecasting with gammas
+# naive stationary prediction: use the overall mean for that node pair
+# naive one-step prediction: use the previous edge value (only get a sens/spec point
+# in the ROC space)
+
+# recall pROC package functionality (see old HOSEA code)
+# plotting an ROC curve, plotting additional points in the space
+
+
 
