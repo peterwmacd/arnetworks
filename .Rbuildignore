@@ -3,4 +3,5 @@
 ^LICENSE\.md$
 ^real_data
 ^simulations
+^simulations_V2
 ^README.Rmd
