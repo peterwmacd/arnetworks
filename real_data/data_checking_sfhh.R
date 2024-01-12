@@ -96,6 +96,24 @@ abline(h=mean(dst),col='red',lty=3)
 abline(h=1,lty=2)
 dev.off()
 
+# normalized growth and dissolution
+grow_norm <- grow_sub
+grow_norm[(X[,,-n]==1)] <- NA
+grt_norm <- apply(grow_norm,3,mean,na.rm=TRUE)
+
+diss_norm <- diss_sub
+diss_norm[(X[,,-n]==0)] <- NA
+dst_norm <- apply(diss_norm,3,mean,na.rm=TRUE)
+
+pdf('data_plots_sfhh/sfhh_grds_norm.pdf',width=7,height=5)
+plot(grt_norm,type='b',col='blue',main='Normalized dynamic activity',
+     ylim=c(0,1),ylab='Growth or dissolution prob.')
+lines(dst_norm,type='b',col='red')
+abline(h=mean(grt_norm),col='blue',lty=3)
+abline(h=mean(dst_norm),col='red',lty=3)
+abline(h=1,lty=2)
+dev.off()
+
 #### Transitivity metrics ####
 
 # look at grown edge probability, plot against number of common neighbors

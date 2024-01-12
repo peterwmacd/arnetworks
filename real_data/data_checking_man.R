@@ -56,6 +56,32 @@ for(rr in 1:nrow(raw_data)){
 }
 #print(dim(X_raw))
 
+#### Metadata ####
+
+# calculate level in the hierarchy
+org <- as.data.frame(manufacturingReportsTo)
+employee <- data.frame(list(id=1:167,level=1))
+
+for(jj in 1:10){
+  for(ii in 1:nrow(org)){
+    child <- org[ii,1]
+    parent <- org[ii,2]
+    if(child != parent){
+      employee[parent,2] <- max(employee[parent,2],1+employee[child,2])
+    }
+  }
+}
+# update singleton nodes
+# technical emails (code as 0)
+employee[c(4,10,21,23,24,26,46),2] <- 0
+# former employees (code as -1)
+employee[c(51,75,87,93,111,139),2] <- -1
+
+node_level <- rep(NA,length(nodes))
+for(ii in 1:length(nodes)){
+  node_level[ii] <- employee[which(employee$id==nodes[ii]),2]
+}
+
 #### Dynamic metrics ####
 
 # metric to decide whether to keep -> total dissolves and grows for a given node
@@ -71,9 +97,13 @@ dev.off()
 node_keep <- which(dynamic_count >= dynamic_thresh)
 X <- X_raw[node_keep,node_keep,]
 p <- dim(X)[1]
+# hierarchical level of active nodes
+levels <- node_level[node_keep]
+# note didn't keep any technical accounts or former employees
 
-# save clean data
+# save clean data and metadata
 saveRDS(X,file='data/X_man.rds')
+saveRDS(levels,file='data/levels_man.rds')
 
 # subset grow/dissolve arrays
 grow_sub <- grow[node_keep,node_keep,]
@@ -96,6 +126,24 @@ plot(grt,type='b',col='blue',main='Dynamic activity',
 lines(dst,type='b',col='red')
 abline(h=mean(grt),col='blue',lty=3)
 abline(h=mean(dst),col='red',lty=3)
+abline(h=1,lty=2)
+dev.off()
+
+# normalized growth and dissolution
+grow_norm <- grow_sub
+grow_norm[(X[,,-n]==1)] <- NA
+grt_norm <- apply(grow_norm,3,mean,na.rm=TRUE)
+
+diss_norm <- diss_sub
+diss_norm[(X[,,-n]==0)] <- NA
+dst_norm <- apply(diss_norm,3,mean,na.rm=TRUE)
+
+pdf('data_plots_man/man_grds_norm.pdf',width=7,height=5)
+plot(grt_norm,type='b',col='blue',main='Normalized fynamic activity',
+     ylim=c(0,1),ylab='Growth or dissolution prob.')
+lines(dst_norm,type='b',col='red')
+abline(h=mean(grt_norm),col='blue',lty=3)
+abline(h=mean(dst_norm),col='red',lty=3)
 abline(h=1,lty=2)
 dev.off()
 

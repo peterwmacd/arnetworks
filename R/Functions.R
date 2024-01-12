@@ -806,12 +806,22 @@ model_residuals <- function(probs,X){
   return(eps)
 }
 
-model_predict <- function(n_out,fit,stats_prev,X_prev){
+model_predict <- function(n_out,fit,X_prev){
   # dimensions
   p <- dim(X_prev)[1]
   # initialize current observation
   X_curr <- X_prev
-  stats_curr <- stats_prev
+  # populate current U/V statistics
+  U <- V <- matrix(0,p,p)
+  # populate U,V
+  for(i in 1:(p-1)){
+    for(j in (i+1):p){
+      tmp <- U[i,j] <- U[j,i] <- sum(X_curr[i,]*X_curr[j,])
+      V[i,j] <- V[j,i] <- (sum(X_curr[i,]+X_curr[j,])-2*tmp)/2
+    }
+  }
+  stats_curr <- list(U=U,V=V)
+  # theta/eta degree parameters
   Ttheta <- tcrossprod(fit$theta)
   Eeta <- tcrossprod(fit$eta)
   # initialize array
