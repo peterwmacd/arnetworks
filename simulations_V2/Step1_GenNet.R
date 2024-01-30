@@ -16,7 +16,7 @@ simuM = function(p, n, theta, eta,  a1=2, b1=2, a2=2, b2=2, initial = NA ) {
   EtaM=eta%*%t(eta)
   
   
-  # Set initial adjacent matrix X[1,,] with the first 3 nodes as Harbour nodes
+  # Set initial adjacent matrix X[1,,] 
   zeroOne=c(0,1); zeroOne=as.vector(zeroOne)
   if (is.na(initial)){
     for(i in 1:(p-1)) for(j in (i+1):p){ 
@@ -35,8 +35,8 @@ simuM = function(p, n, theta, eta,  a1=2, b1=2, a2=2, b2=2, initial = NA ) {
   for(t in 2:n){
     # Set transition probability matrix first, then generate X[t,,]
     for(i in 1:(p-1)) for(j in (i+1):p){ 
-      tmp = U[i,j,t-1] = U[j,i,t-1] = sum(X[i,, t-1]*X[j,,t-1]) # No. of common friends
-      tmp1 = V[i,j,t-1] = V[j,i,t-1] = (sum(X[i,,t-1]+X[j,,t-1])-2*tmp)/2 # No. of uncommon friends
+      tmp = U[i,j,t-1] = U[j,i,t-1] = sum(X[i,, t-1]*X[j,,t-1])/(p-1) # No. of common friends
+      tmp1 = V[i,j,t-1] = V[j,i,t-1] = (sum(X[i,,t-1] + X[j,,t-1])- 2* X[i,j,t-1])/(p-1) - 2*tmp       # No. of uncommon friends
       if(X[i,j,t-1]==0) { 
         pb=ThetaM[i,j]*exp(a1*tmp)/(exp(a1*tmp)+exp(b1*tmp1)+1)
         X[i,j,t]=sample(zeroOne, 1, prob=c(1-pb, pb)); X[j,i,t]=X[i,j,t]
@@ -52,8 +52,8 @@ simuM = function(p, n, theta, eta,  a1=2, b1=2, a2=2, b2=2, initial = NA ) {
   U_full[,,1:(n-1)] = U
   V_full[,,1:(n-1)] = V
   
-  U_full[i,j,n] = U_full[j,i,n] = sum(X[i,, n]*X[j,,n]) # No. of common friends
-  V_full[i,j,n] = V_full[j,i,n] = (sum(X[i,,n]+X[j,,n])-2*tmp)/2 # No. of uncommon friends
+  U_full[i,j,n] = U_full[j,i,n] = sum(X[i,, n]*X[j,,n])/(p-1) # No. of common friends
+  V_full[i,j,n] = V_full[j,i,n] = ((sum(X[i,,n]+X[j,,n])-2*tmp) - 2* X[i,j,n])/(p-1) # No. of uncommon friends
   
   
   res = list()
