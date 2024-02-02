@@ -382,21 +382,19 @@ dl2dthetaidthetaj = function(Aij, Bij, Uij, Vij, a, b, thetai, thetaj){
 
 }
 
+alSearch = function(gMat, el, gamma){
+  r = length(el)
+  objective.in <- rep(1,2*r)
 
-# alSearch = function(gMat, el, gamma){
-#   r = length(el)
-#   objective.in <- rep(1,2*r)
-#
-#   const.mat <- rbind(cbind(gMat,-gMat),cbind(-gMat,gMat),-diag(2*r))
-#   const.dir <- "<="
-#   const.rhs <- c(rep(1,r)*gamma+el,rep(1,r)*gamma-el,rep(0,2*r))
-#   res <- lpSolve::lp(direction = "min",objective.in = objective.in, const.mat = const.mat,
-#             const.dir = const.dir, const.rhs = const.rhs)
-#   res.dir <- res$solution
-#   a_l <- res.dir[1:r] - res.dir[-(1:r)]
-#   return(a_l)
-# }
-
+  const.mat <- rbind(cbind(gMat,-gMat),cbind(-gMat,gMat),-diag(2*r))
+  const.dir <- "<="
+  const.rhs <- c(rep(1,r)*gamma+el,rep(1,r)*gamma-el,rep(0,2*r))
+  res <- lpSolve::lp(direction = "min",objective.in = objective.in, const.mat = const.mat,
+            const.dir = const.dir, const.rhs = const.rhs)
+  res.dir <- res$solution
+  a_l <- res.dir[1:r] - res.dir[-(1:r)]
+  return(a_l)
+}
 
 localMLE_refine_theta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etavec, i){
   thetai = par
@@ -436,6 +434,69 @@ localMLE_refine_theta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, et
 
 }
 
+grr_localMLE_refine_theta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etavec, i){
+  thetai = par
+  a = ab[1]
+  b = ab[2]
+
+  gArray = array(0,dim = c(2*p+2, p-1))
+  jix = 1
+  for (j in (1:p)[-i]){
+    A1ij = A1[i,j,]
+    B1ij = B1[i,j,]
+    A2ij = A2[i,j,]
+    B2ij = B2[i,j,]
+    Uij= U[i,j,]
+    Vij= V[i,j,]
+    thetaj = thetavec[j]
+    etai = etavec[i]
+    etaj = etavec[j]
+
+    gArray[1,jix] = dlda_ab(A1ij, B1ij, A2ij, B2ij, Uij, Vij, a, b, thetai, thetaj, etai, etaj)
+    gArray[2,jix] = dldb_ab(A1ij, B1ij, A2ij, B2ij, Uij, Vij, a, b, thetai, thetaj, etai, etaj)
+
+    gArray[2+i,jix] =  dldthetai(A1ij, B1ij, Uij, Vij, a, b, thetai, thetaj)
+    gArray[2+j,jix] =  dldthetai(A1ij, B1ij, Uij, Vij, a, b, thetaj, thetai)
+
+    gArray[2+p+i,jix] = dldthetai(A2ij, B2ij, Vij, Uij, b, a, etai, etaj)
+    gArray[2+p+j,jix] = dldthetai(A2ij, B2ij, Vij, Uij, b, a, etaj, etai)
+
+    jix = jix + 1
+
+  }
+
+
+  gvec = apply(gArray, c(1), mean)
+
+
+  grrArray = array(0,dim = c(2*p+2, p-1))
+  jix = 1
+  for (j in (1:p)[-i]){
+    A1ij = A1[i,j,]
+    B1ij = B1[i,j,]
+    A2ij = A2[i,j,]
+    B2ij = B2[i,j,]
+    Uij= U[i,j,]
+    Vij= V[i,j,]
+    thetaj = thetavec[j]
+    etai = etavec[i]
+    etaj = etavec[j]
+
+    grrArray[1,jix] = dl2dadthetai(A1ij, B1ij, Uij, Vij, a, b, thetai, thetaj)
+    grrArray[2,jix] = dl2dbdthetai(A1ij, B1ij, Uij, Vij, a, b, thetai, thetaj)
+
+    grrArray[2+i,jix] =  dl2dthetaidthetai(A1ij, B1ij, Uij, Vij, a, b, thetai, thetaj)
+    grrArray[2+j,jix] =  dl2dthetaidthetaj(A1ij, B1ij, Uij, Vij, a, b, thetaj, thetaj)
+
+    jix = jix + 1
+
+  }
+
+  grrvec = apply(grrArray, c(1), mean)
+  2*sum(al*gvec)*sum(al*grrvec)
+
+}
+
 localMLE_refine_eta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etavec, i){
   etai = par
   p <- dim(A1)[1]
@@ -471,6 +532,72 @@ localMLE_refine_eta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etav
 
   gvec = apply(gArray, c(1), mean)
   sum(al*gvec)^2
+
+}
+
+grr_localMLE_refine_eta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etavec, i){
+  etai = par
+  a = ab[1]
+  b = ab[2]
+
+  gArray = array(0,dim = c(2*p+2, p-1))
+  jix = 1
+  for (j in (1:p)[-i]){
+    A1ij = A1[i,j,]
+    B1ij = B1[i,j,]
+    A2ij = A2[i,j,]
+    B2ij = B2[i,j,]
+    Uij= U[i,j,]
+    Vij= V[i,j,]
+    etaj = etavec[j]
+    thetai = thetavec[i]
+    thetaj = thetavec[j]
+
+    gArray[1,jix] = dlda_ab(A1ij, B1ij, A2ij, B2ij, Uij, Vij, a, b, thetai, thetaj, etai, etaj)
+    gArray[2,jix] = dldb_ab(A1ij, B1ij, A2ij, B2ij, Uij, Vij, a, b, thetai, thetaj, etai, etaj)
+
+    gArray[2+i,jix] =  dldthetai(A1ij, B1ij, Uij, Vij, a, b, thetai, thetaj)
+    gArray[2+j,jix] =  dldthetai(A1ij, B1ij, Uij, Vij, a, b, thetaj, thetai)
+
+    gArray[2+p+i,jix] = dldthetai(A2ij, B2ij, Vij, Uij, b, a, etai, etaj)
+    gArray[2+p+j,jix] = dldthetai(A2ij, B2ij, Vij, Uij, b, a, etaj, etai)
+
+    jix = jix + 1
+
+  }
+
+
+  gvec = apply(gArray, c(1), mean)
+
+
+  grrArray = array(0,dim = c(2*p+2, p-1))
+  jix = 1
+  for (j in (1:p)[-i]){
+    A1ij = A1[i,j,]
+    B1ij = B1[i,j,]
+    A2ij = A2[i,j,]
+    B2ij = B2[i,j,]
+    Uij= U[i,j,]
+    Vij= V[i,j,]
+    thetaj = thetavec[j]
+    etai = etavec[i]
+    etaj = etavec[j]
+
+    grrArray[1,jix] = dl2dadetai_ab(A2ij, B2ij, Uij, Vij, a, b, etai, etaj)
+    grrArray[2,jix] = dl2dbdetai_ab(A2ij, B2ij, Uij, Vij, a, b, etai, etaj)
+
+
+    grrArray[2+p+i,jix] = dl2dthetaidthetai(A2ij, B2ij, Vij, Uij, b, a, etai, etaj)
+    grrArray[2+p+j,jix] = dl2dthetaidthetaj(A2ij, B2ij, Vij, Uij, b, a, etai, etaj)
+
+
+    jix = jix + 1
+
+  }
+
+  grrvec = apply(grrArray, c(1), mean)
+
+  2*sum(al*gvec)*sum(al*grrvec)
 
 }
 
@@ -855,4 +982,46 @@ model_predict <- function(n_out,fit,X_prev){
     return(X_out)
   }
 }
+
+#### for fitting a simple AR(1) model ####
+
+simple_ar_fit <- function(X){
+  n <- dim(X)[3]
+  p <- dim(X)[1]
+  # estimate flip on
+  a1 <- sum(X[,,-1]*(1-X[,,-n]))
+  a2 <- sum(1-X[,,-n]) - n*p
+  alpha_hat <- a1/a2
+  # estimate flip off
+  b1 <- sum((1-X[,,-1])*X[,,-n])
+  b2 <- sum(X[,,-n])
+  beta_hat <- b1/b2
+  return(c(alpha_hat,beta_hat))
+}
+
+simple_ar_predict <- function(n_out,fit,X_prev){
+  # dimensions
+  p <- dim(X_prev)[1]
+  # initialize current observation
+  X_curr <- X_prev
+  X_out <- array(NA,c(p,p,n_out))
+  for(t in 1:n_out){
+    # predict
+    X_out[,,t] <- fit[1] + X_curr*(1 - fit[1] - fit[2])
+    if(t < n_out){
+      # update X
+      X_curr <- X_out[,,t]
+    }
+  }
+  if(n_out==1){
+    return(X_out[,,1])
+  }
+  else{
+    return(X_out)
+  }
+}
+
+
+
+
 

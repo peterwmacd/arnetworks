@@ -2,7 +2,7 @@
 
 estim_transitivity <- function(X,
                                # optimization parameters
-                               iter=100,delta=1e-4,verbose=FALSE,
+                               iter=10,delta=1e-4,verbose=FALSE,
                                # initializer tuning (w/ default values)
                                ab_init=c(0,0),
                                thetamax_init=1,etamax_init=1){
@@ -88,7 +88,6 @@ estim_transitivity <- function(X,
     print('done initialization')
   }
 
-
   ##### Initial value: ab1, thetaE and etaE
   ##### Now we apply the global MLE for (a,b) and local MLE for thetai and etai
 
@@ -128,6 +127,111 @@ estim_transitivity <- function(X,
   }
   if(verbose){
     print('done local estimation')
+  }
+
+  # refinement
+
+  # tuning parameters
+  r_seq <- c(0.5,0.1)
+  # rate parameters
+  G = 2
+  Gc = 2*p
+  q = G + Gc
+  S_g = p*(p-1)
+  S_gc = p-1
+  c_g2 = 0.01*max(q *log(n*S_g)/sqrt(n*S_g),q^{3/2} *(log(n*S_g))^{3/2}/sqrt(n)/S_g)
+  c_gc2 = 0.01*max(q *log(n * S_gc)/sqrt(n * S_gc),q^{3/2} *(log(n*S_gc))^{3/2}/sqrt(n)/S_gc)
+  delta_n_sqrt = sqrt(max(c_g2, c_gc2))
+  gamma_theta = 0.5 * delta_n_sqrt
+  gamma_a = 0.01 * delta_n_sqrt
+  gamma_b = 0.01 * delta_n_sqrt
+  gamma_eta = 0.5 * delta_n_sqrt
+  # initialize
+  ab2 = ab1
+  thetaR = thetaE
+  etaR = etaE
+  # loop refinement
+  refine <- 1
+  for (r_tilda in r_seq){
+    # initialize gradient array
+    gArray = array(0, dim = c(2+p*2,2+p*2,p ))
+    # populate gradient array
+    for (i in 1:p){
+      for (j in (1:p)[-i]){
+        A1ij = A1[i,j,]
+        B1ij = B1[i,j,]
+        A2ij = A2[i,j,]
+        B2ij = B2[i,j,]
+        Uij= U[i,j,]
+        Vij= V[i,j,]
+        thetai = thetaE[i]
+        thetaj = thetaE[j]
+        etai = etaE[i]
+        etaj = etaE[j]
+        gArray[1,1,i] = gArray[1,1,i] + dl2dada_ab(A1ij, B1ij, A2ij, B2ij, Uij, Vij, ab1[1], ab1[2], thetai, thetaj, etai, etaj)
+        gArray[1,2,i] = gArray[2,1,i] = gArray[1,2,i] + dl2dadb_ab(A1ij, B1ij, A2ij, B2ij, Uij, Vij, ab1[1], ab1[2], thetai, thetaj, etai, etaj)
+        gArray[2,2,i] = gArray[2,2,i] + dl2dbdb_ab(A1ij, B1ij, A2ij, B2ij, Uij, Vij, ab1[1], ab1[2], thetai, thetaj, etai, etaj)
+
+        gArray[1,2+i,i] =  gArray[2+i,1,i] = gArray[1,2+i,i] + dl2dadthetai(A1ij, B1ij, Uij, Vij, ab1[1], ab1[2], thetai, thetaj)
+        gArray[1,2+j,i] =  gArray[2+j,1,i] = gArray[1,2+j,i] + dl2dadthetai(A1ij, B1ij, Uij, Vij, ab1[1], ab1[2], thetaj, thetai)
+        gArray[2,2+i,i] =  gArray[2+i,2,i] = gArray[2,2+i,i] + dl2dbdthetai(A1ij, B1ij, Uij, Vij, ab1[1], ab1[2], thetai, thetaj)
+        gArray[2,2+j,i] =  gArray[2+j,2,i] = gArray[2,2+j,i] + dl2dbdthetai(A1ij, B1ij, Uij, Vij, ab1[1], ab1[2], thetaj, thetai)
+
+        gArray[1,2+p+i,i] = gArray[2+p+i,1,i] = gArray[1,2+p+i,i] + dl2dadetai_ab(A2ij, B2ij, Uij, Vij, ab1[1], ab1[2], etai, etaj)
+        gArray[1,2+p+j,i] = gArray[2+p+j,1,i] = gArray[1,2+p+j,i] + dl2dadetai_ab(A2ij, B2ij, Uij, Vij, ab1[1], ab1[2], etaj, etai)
+        gArray[2,2+p+i,i] = gArray[2+p+i,2,i] = gArray[2,2+p+i,i] + dl2dbdetai_ab(A2ij, B2ij, Uij, Vij, ab1[1], ab1[2], etai, etaj)
+        gArray[2,2+p+j,i] = gArray[2+p+j,2,i] = gArray[2,2+p+j,i] + dl2dbdetai_ab(A2ij, B2ij, Uij, Vij, ab1[1], ab1[2], etaj, etai)
+
+        gArray[2+i,2+i,i] = gArray[2+i,2+i,i] + dl2dthetaidthetai(A1ij, B1ij, Uij, Vij, ab1[1], ab1[2], thetai, thetaj)
+        gArray[2+j,2+j,i] = gArray[2+j,2+j,i] + dl2dthetaidthetai(A1ij, B1ij, Uij, Vij, ab1[1], ab1[2], thetaj, thetaj)
+        gArray[2+i,2+j,i] = gArray[2+j,2+i,i] =  gArray[2+i,2+j,i] + dl2dthetaidthetaj(A1ij, B1ij, Uij, Vij, ab1[1], ab1[2], thetai, thetaj)
+
+        gArray[2+p+i,2+p+i,i] = gArray[2+p+i,2+p+i,i] + dl2dthetaidthetai(A2ij, B2ij, Vij, Uij, ab1[2], ab1[1], etai, etaj)
+        gArray[2+p+j,2+p+j,i] =  gArray[2+p+j,2+p+j,i] +dl2dthetaidthetai(A2ij, B2ij, Vij, Uij, ab1[2], ab1[1], etaj, etai)
+        gArray[2+p+i,2+p+j,i] = gArray[2+p+j,2+p+i,i] = gArray[2+p+i,2+p+j,i] +dl2dthetaidthetaj(A2ij, B2ij, Vij, Uij, ab1[2], ab1[1], etai, etaj)
+
+      }
+    }
+    # split gradient array
+    g_local = gArray/(p-1)
+    g_global = apply(gArray, c(1,2),sum)/(p*(p-1))
+    g_all = array(c(g_global, g_global, g_local, g_local),dim = c(2+2*p,2+2*p,2*p+2))
+    # space for linear projections
+    El = diag(1, 2+2*p)
+    Al = array(0, dim = c(2+2*p,2+2*p)) #order: a,b, theta1, \dots, thetap, eta1, \dots, etap
+    # search for linear projection
+    Al[,1] = alSearch(g_all[,,1], El[,1], gamma_a)
+    Al[,2] = alSearch(g_all[,,2], El[,2], gamma_b)
+    for (i in 3:(2 + p)){
+      Al[,i] = alSearch(g_all[,,i], El[,i], gamma_theta)
+    }
+    for (i in (p+3):(2 + 2*p)){
+      Al[,i] = alSearch(g_all[,,i], El[,i], gamma_eta)
+    }
+    # refinement for a,b
+    ab2[1] = stats::optim(ab1[1],  globalMLE_refine_a,  method = 'L-BFGS-B', al = Al[,1], A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = U, V = V, ab = ab1, thetavec = thetaE, etavec = etaE, lower = max(0.01, ab1[1]-r_tilda), upper = ab1[1]+r_tilda)$par
+    ab2[2] = stats::optim(ab1[2],  globalMLE_refine_b,  method = 'L-BFGS-B', al = Al[,2], A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = U, V = V, ab = ab1, thetavec = thetaE, etavec = etaE, lower = max(0.01, ab1[2]-r_tilda), upper = ab1[2]+r_tilda)$par
+    if(verbose){
+      print(ab2)
+      print(paste0('Done a,b refinement ',refine))
+    }
+    # refinement for theta,eta
+    thetamax = apply((1 +exp(ab1[1]*U) + exp(ab1[2]*V) )/exp(ab1[1]*U),c(1,2),min)
+    etamax =  apply((1 +exp(ab1[2]*V) + exp(ab1[1]*U) )/exp(ab1[2]*V),c(1,2),min)
+    for (i in 1:p){
+      thetaR[i] = stats::optim(thetaE[i],  localMLE_refine_theta, grr_localMLE_refine_theta,  method = 'L-BFGS-B', al = Al[,2+i], A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = U, V = V, ab = ab1, thetavec = thetaE, etavec = etaE, i = i, lower = max(0.01, thetaE[i]-r_tilda), upper = min(c(thetamax[i,-i]/thetaE[-i], thetaE[i]+r_tilda)))$par
+      etaR[i] = stats::optim(etaE[i],  localMLE_refine_eta, grr_localMLE_refine_eta,  method = 'L-BFGS-B', al = Al[,2+p+i], A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = U, V = V, ab = ab1, thetavec = thetaE, etavec = etaE, i = i, lower = max(0.01, etaE[i]-r_tilda), upper = min(c(etamax[i,-i]/etaE[-i], etaE[i]+r_tilda)))$par
+    }
+    if(verbose){
+      print(stats::quantile(thetaR))
+      print(stats::quantile(etaR))
+      print(paste0('Done theta,eta refinement ',refine))
+    }
+    # update
+    ab1 = ab2
+    thetaE = thetaR
+    etaE = etaR
+    refine <- refine+1
   }
   # store estimators
   res <- list()

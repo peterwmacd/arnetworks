@@ -139,13 +139,49 @@ diss_norm[(X[,,-n]==0)] <- NA
 dst_norm <- apply(diss_norm,3,mean,na.rm=TRUE)
 
 pdf('data_plots_man/man_grds_norm.pdf',width=7,height=5)
-plot(grt_norm,type='b',col='blue',main='Normalized fynamic activity',
+plot(grt_norm,type='b',col='blue',main='Normalized dynamic activity',
      ylim=c(0,1),ylab='Growth or dissolution prob.')
 lines(dst_norm,type='b',col='red')
 abline(h=mean(grt_norm),col='blue',lty=3)
 abline(h=mean(dst_norm),col='red',lty=3)
 abline(h=1,lty=2)
 dev.off()
+
+# growth and dissolution prob. after conditioning on density
+e_sparse <- (apply(X,c(1,2),mean) < 0.2)
+e_dense <- (apply(X,c(1,2),mean) >= 0.2)
+
+diss_norm_sparse <- diss_norm_dense <- diss_norm
+grow_norm_sparse <- grow_norm_dense <- grow_norm
+for(kk in 1:dim(diss_norm)[3]){
+  diss_norm_sparse[,,kk][e_dense] <- NA
+  grow_norm_sparse[,,kk][e_dense] <- NA
+  diss_norm_dense[,,kk][e_sparse] <- NA
+  grow_norm_dense[,,kk][e_sparse] <- NA
+}
+
+grt_norm_sparse <- apply(grow_norm_sparse,3,mean,na.rm=TRUE)
+dst_norm_sparse <- apply(diss_norm_sparse,3,mean,na.rm=TRUE)
+grt_norm_dense <- apply(grow_norm_dense,3,mean,na.rm=TRUE)
+dst_norm_dense <- apply(diss_norm_dense,3,mean,na.rm=TRUE)
+
+plot(grt_norm_sparse,type='b',col='blue',main='Normalized dynamic activity, sparse nodes',
+     ylim=c(0,1),ylab='Growth or dissolution prob.')
+lines(dst_norm_sparse,type='b',col='red')
+abline(h=mean(grt_norm_sparse),col='blue',lty=3)
+abline(h=mean(dst_norm_sparse),col='red',lty=3)
+abline(h=1,lty=2)
+
+plot(grt_norm_dense,type='b',col='blue',main='Normalized dynamic activity, dense nodes',
+     ylim=c(0,1),ylab='Growth or dissolution prob.')
+lines(dst_norm_dense,type='b',col='red')
+abline(h=mean(grt_norm_dense),col='blue',lty=3)
+abline(h=mean(dst_norm_dense),col='red',lty=3)
+abline(h=1,lty=2)
+
+# looking for whether p(grow) = 1 - prob(dissolve) which would imply that there
+# is no observed AR structure, this is not the case, both groups show evidence of
+# persistence
 
 #### Transitivity metrics ####
 

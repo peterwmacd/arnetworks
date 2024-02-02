@@ -17,6 +17,23 @@ UV_man <- transitivity_stats(X_man)
 # # save fitted model
 # saveRDS(fit_man,file='data/fit_man.rds')
 
+#### checking for empirical AR structure ####
+
+rho_man <- apply(X_man,c(1,2),
+                 function(v){cor(v[-1],v[-n])})
+
+acor_obs <- mean(abs(rho_man),na.rm=TRUE)
+acor_boot <- rep(0,100)
+for(bb in 1:100){
+  acor_boot[bb] <- mean(abs(apply(X_man[,,sample(1:n,n)],c(1,2),
+                         function(v){cor(v[-1],v[-n])})),na.rm=TRUE)
+}
+
+hist(acor_boot,xlim=c(0,1))
+abline(v=acor_obs,lty=2)
+
+# appears to be a significant amount of autocorrelation in the data
+
 #### COMMENTS on errors ####
 # initializers ab_init = c(1,1) works, other attempts threw fn=Inf error in global estimation...
 # returns (a,b) = (0.193,0.177)
@@ -245,3 +262,92 @@ for(i in 1:length(n_train)){
 }
 dev.off()
 
+#### link prediction V02 ####
+
+# vary the size of training set, prediction horizon
+# set training sets n_train=10,...,22, starting from time 14
+# set prediction horizon n_out=1,2,3
+
+# AR model: recursive forecasts from the fitted AR network model
+# Degree parameters: rank-one approximation of the time-averaged adjacency matrix
+# Edge means: time-averaged adjacency matrix (more parameters than AR model)
+# Previous edge: use the most recent observed edge (only get one spec/sens pair)
+# simple AR model: recursive forecasts from simple AR model
+
+X_man_sub <- X_man[,,-(1:13)]
+n_train <- 10:23
+
+# # reduced model fits
+fit_man_reduce <- fit_man_simple <- list()
+length(fit_man_reduce) <- length(fit_man_simple) <- length(n_train)
+for(i in 1:length(n_train)){
+  fit_man_reduce[[i]] <- estim_transitivity(X_man_sub[,,1:n_train[i]],verbose=TRUE)
+  fit_man_simple[[i]] <- simple_ar_fit(X_man_sub[,,1:n_train[i]])
+}
+# save reduced model fits
+saveRDS(fit_man_reduce,file='data/fit_man_reduce.rds')
+saveRDS(fit_man_simple,file='data/fit_man_simple.rds')
+
+# load reduced model fits
+fit_man_reduce <- readRDS(file='data/fit_man_reduce.rds')
+fit_man_simple <- readRDS(file='data/fit_man_simple.rds')
+
+# predict and plot ROCs
+response_combined <- list(NULL,NULL,NULL)
+pred_degree_combined <- list(NULL,NULL,NULL)
+pred_model_combined <- list(NULL,NULL,NULL)
+pred_mean_combined <- list(NULL,NULL,NULL)
+pred_simple_combined <- list(NULL,NULL,NULL)
+pred_naive_combined <- list(matrix(0,2,2),matrix(0,2,2),matrix(0,2,2))
+
+for(i in 1:length(n_train)){
+  # training set edge means or 1-dimensional approx (similar number of parameters)
+  Xmean <- apply(X_man_sub[,,1:n_train[i]],c(1,2),mean)
+  eigXmean <- eigen(Xmean)
+  pred_stationary <- eigXmean$values[1]*tcrossprod(eigXmean$vectors[,1])
+  # model probabilities
+  pred_model <- model_predict(3,fit_man_reduce[[i]],X_man_sub[,,n_train[i]])
+  # simple AR probabilities
+  pred_simple <- simple_ar_predict(3,fit_man_simple[[i]],X_man_sub[,,n_train[i]])
+  for(n_out in 1:3){
+    # store response
+    response_combined[[n_out]] <- c(response_combined[[n_out]],ut(X_man_sub[,,n_train[i]+n_out]))
+    # store pred for naive stationary prediction
+    pred_degree_combined[[n_out]] <- c(pred_degree_combined[[n_out]],ut(pred_stationary))
+    # store pred for model-based prediction
+    pred_model_combined[[n_out]] <- c(pred_model_combined[[n_out]],ut(pred_model[,,n_out]))
+    # store pred for mean prediction
+    pred_mean_combined[[n_out]] <- c(pred_mean_combined[[n_out]],ut(Xmean))
+    # store pred for simple prediction
+    pred_simple_combined[[n_out]] <- c(pred_simple_combined[[n_out]],ut(pred_simple[,,n_out]))
+    # store pred for naive prediction
+    pred_naive_combined[[n_out]] <- pred_naive_combined[[n_out]] + as.matrix(table(ut(X_man_sub[,,n_train[i]]),ut(X_man_sub[,,n_train[i]+n_out])))
+  }
+}
+
+pdf('fit_plots_man/roc_curves_man_combined.pdf')
+par(mfrow=c(1,1))
+for(n_out in 1:3){
+    temp <- roc(response=response_combined[[n_out]],predictor=pred_degree_combined[[n_out]])
+    plot(temp,col='blue',
+         main=paste0('ROC, prediction horizon ',n_out))
+    # ROC for model-based prediction
+    temp2 <- roc(response=response_combined[[n_out]],predictor=pred_model_combined[[n_out]])
+    plot(temp2,col='orange',add=TRUE)
+    # ROC for edge means
+    temp3 <- roc(response=response_combined[[n_out]],predictor=pred_mean_combined[[n_out]])
+    plot(temp3,col='red',add=TRUE)
+    # calculate point for naive one-step
+    naive_class <- pred_naive_combined[[n_out]]
+    fpr <- naive_class[2,1]/(naive_class[2,1] + naive_class[1,1])
+    tpr <- naive_class[2,2]/(naive_class[2,2] + naive_class[1,2])
+    points(1-fpr,tpr,col='green',pch=15,cex=1.2)
+    # ROC for simple AR model
+    temp4 <- roc(response=response_combined[[n_out]],predictor=pred_simple_combined[[n_out]])
+    plot(temp4,col='purple',add=TRUE)
+    # legend
+    legend(x=.75,y=.2,ncol=2,cex=.7,
+           legend=c('AR model','Simple AR model','Degree parameters','Edge means','Previous edge'),
+           lty=c(1,1,1,1,NA),pch=c(NA,NA,NA,NA,15),col=c('orange','purple','blue','red','green'))
+}
+dev.off()

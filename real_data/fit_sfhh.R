@@ -18,6 +18,22 @@ UV_sfhh <- transitivity_stats(X_sfhh)
 # # save fitted model
 # saveRDS(fit_sfhh,file='data/fit_sfhh.rds')
 
+#### AR structure checking ###
+
+rho_sfhh <- apply(X_sfhh,c(1,2),
+                 function(v){cor(v[-1],v[-n])})
+
+acor_obs <- mean(abs(rho_sfhh),na.rm=TRUE)
+acor_boot <- rep(0,100)
+for(bb in 1:100){
+  acor_boot[bb] <- mean(abs(apply(X_sfhh[,,sample(1:n,n)],c(1,2),
+                                  function(v){cor(v[-1],v[-n])})),na.rm=TRUE)
+}
+
+hist(acor_boot,xlim=c(0,1))
+abline(v=acor_obs,lty=2)
+
+
 #### Model interpretation ####
 
 # load model
