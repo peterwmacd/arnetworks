@@ -1,7 +1,8 @@
 # load data
 setwd('~/packages/arnetworks/real_data/')
-# load package
+# load packages (incl. arnetworks)
 library(devtools)
+library(pROC)
 load_all()
 
 # manufacturing network
@@ -13,9 +14,9 @@ UV_man <- transitivity_stats(X_man)
 # mean(U) ~ 1.42, 42% of entries 0
 # mean(V) ~ 8, 1% of entries 0
 
-# fit_man <- estim_transitivity(X_man,verbose=TRUE)
-# # save fitted model
-# saveRDS(fit_man,file='data/fit_man.rds')
+fit_man <- estim_transitivity(X_man,verbose=TRUE)
+# save fitted model
+saveRDS(fit_man,file='data/fit_man.rds')
 
 #### checking for empirical AR structure ####
 
@@ -278,19 +279,22 @@ X_man_sub <- X_man[,,-(1:13)]
 n_train <- 10:23
 
 # # reduced model fits
-fit_man_reduce <- fit_man_simple <- list()
-length(fit_man_reduce) <- length(fit_man_simple) <- length(n_train)
+#fit_man_reduce <- fit_man_simple <- fit_man_edge <- list()
+#length(fit_man_reduce) <- length(fit_man_simple) <- length(fit_man_edge) <- length(n_train)
 for(i in 1:length(n_train)){
-  fit_man_reduce[[i]] <- estim_transitivity(X_man_sub[,,1:n_train[i]],verbose=TRUE)
+  #fit_man_reduce[[i]] <- estim_transitivity(X_man_sub[,,1:n_train[i]],verbose=TRUE)
   fit_man_simple[[i]] <- simple_ar_fit(X_man_sub[,,1:n_train[i]])
+  fit_man_edge[[i]] <- edge_ar_fit(X_man_sub[,,1:n_train[i]])
 }
 # save reduced model fits
-saveRDS(fit_man_reduce,file='data/fit_man_reduce.rds')
+#saveRDS(fit_man_reduce,file='data/fit_man_reduce.rds')
 saveRDS(fit_man_simple,file='data/fit_man_simple.rds')
+saveRDS(fit_man_edge,file='data/fit_man_edge.rds')
 
 # load reduced model fits
-fit_man_reduce <- readRDS(file='data/fit_man_reduce.rds')
+#fit_man_reduce <- readRDS(file='data/fit_man_reduce.rds')
 fit_man_simple <- readRDS(file='data/fit_man_simple.rds')
+fit_man_edge <- readRDS(file='data/fit_man_edge.rds')
 
 # predict and plot ROCs
 response_combined <- list(NULL,NULL,NULL)
@@ -298,6 +302,7 @@ pred_degree_combined <- list(NULL,NULL,NULL)
 pred_model_combined <- list(NULL,NULL,NULL)
 pred_mean_combined <- list(NULL,NULL,NULL)
 pred_simple_combined <- list(NULL,NULL,NULL)
+pred_edgear_combined <- list(NULL,NULL,NULL)
 pred_naive_combined <- list(matrix(0,2,2),matrix(0,2,2),matrix(0,2,2))
 
 for(i in 1:length(n_train)){
@@ -306,20 +311,24 @@ for(i in 1:length(n_train)){
   eigXmean <- eigen(Xmean)
   pred_stationary <- eigXmean$values[1]*tcrossprod(eigXmean$vectors[,1])
   # model probabilities
-  pred_model <- model_predict(3,fit_man_reduce[[i]],X_man_sub[,,n_train[i]])
+  #pred_model <- model_predict(3,fit_man_reduce[[i]],X_man_sub[,,n_train[i]])
   # simple AR probabilities
   pred_simple <- simple_ar_predict(3,fit_man_simple[[i]],X_man_sub[,,n_train[i]])
+  # edgewise AR probabilities
+  pred_edgear <- edge_ar_predict(3,fit_man_edge[[i]],X_man_sub[,,n_train[i]])
   for(n_out in 1:3){
     # store response
     response_combined[[n_out]] <- c(response_combined[[n_out]],ut(X_man_sub[,,n_train[i]+n_out]))
     # store pred for naive stationary prediction
     pred_degree_combined[[n_out]] <- c(pred_degree_combined[[n_out]],ut(pred_stationary))
     # store pred for model-based prediction
-    pred_model_combined[[n_out]] <- c(pred_model_combined[[n_out]],ut(pred_model[,,n_out]))
+    #pred_model_combined[[n_out]] <- c(pred_model_combined[[n_out]],ut(pred_model[,,n_out]))
     # store pred for mean prediction
     pred_mean_combined[[n_out]] <- c(pred_mean_combined[[n_out]],ut(Xmean))
-    # store pred for simple prediction
+    # store pred for simple AR prediction
     pred_simple_combined[[n_out]] <- c(pred_simple_combined[[n_out]],ut(pred_simple[,,n_out]))
+    # store pred for edgewise AR prediction
+    pred_edgear_combined[[n_out]] <- c(pred_edgear_combined[[n_out]],ut(pred_edgear[,,n_out]))
     # store pred for naive prediction
     pred_naive_combined[[n_out]] <- pred_naive_combined[[n_out]] + as.matrix(table(ut(X_man_sub[,,n_train[i]]),ut(X_man_sub[,,n_train[i]+n_out])))
   }
@@ -332,22 +341,95 @@ for(n_out in 1:3){
     plot(temp,col='blue',
          main=paste0('ROC, prediction horizon ',n_out))
     # ROC for model-based prediction
-    temp2 <- roc(response=response_combined[[n_out]],predictor=pred_model_combined[[n_out]])
-    plot(temp2,col='orange',add=TRUE)
+    #temp2 <- roc(response=response_combined[[n_out]],predictor=pred_model_combined[[n_out]])
+    #plot(temp2,col='orange',add=TRUE)
     # ROC for edge means
     temp3 <- roc(response=response_combined[[n_out]],predictor=pred_mean_combined[[n_out]])
     plot(temp3,col='red',add=TRUE)
+    # ROC for simple AR model
+    temp4 <- roc(response=response_combined[[n_out]],predictor=pred_simple_combined[[n_out]])
+    plot(temp4,col='purple',add=TRUE)
+    # ROC for edgewise AR model
+    temp5 <- roc(response=response_combined[[n_out]],predictor=pred_edgear_combined[[n_out]])
+    plot(temp5,col='cyan',add=TRUE)
     # calculate point for naive one-step
     naive_class <- pred_naive_combined[[n_out]]
     fpr <- naive_class[2,1]/(naive_class[2,1] + naive_class[1,1])
     tpr <- naive_class[2,2]/(naive_class[2,2] + naive_class[1,2])
     points(1-fpr,tpr,col='green',pch=15,cex=1.2)
-    # ROC for simple AR model
-    temp4 <- roc(response=response_combined[[n_out]],predictor=pred_simple_combined[[n_out]])
-    plot(temp4,col='purple',add=TRUE)
     # legend
     legend(x=.75,y=.2,ncol=2,cex=.7,
-           legend=c('AR model','Simple AR model','Degree parameters','Edge means','Previous edge'),
-           lty=c(1,1,1,1,NA),pch=c(NA,NA,NA,NA,15),col=c('orange','purple','blue','red','green'))
+           legend=c('AR model','Simple AR model','Edgewise AR model', 'Degree parameters','Edge means','Previous edge'),
+           lty=c(1,1,1,1,1,NA),pch=c(NA,NA,NA,NA,NA,15),col=c('orange','purple','cyan','blue','red','green'))
 }
 dev.off()
+
+######
+
+# Likelihood/AIC/BIC-based model comparison
+
+# want to do this before and after the split
+
+# minimize:
+# AIC -2ll + 2{# param}
+# BIC -2ll + log(k_bic){# param}
+n_bic <- (n-1)*choose(p,2)
+
+ics <- matrix(NA,6,2)
+rownames(ics) <- c('Transitivity AR model',
+                   'Simple AR model',
+                   'Edge-wise AR model',
+                   'Edge means model',
+                   'Degree parameter model',
+                   'Global mean model')
+colnames(ics) <- c('AIC','BIC')
+
+# 1. Transitivity AR model
+# 2p+2 parameters
+gamma_tar <- model_probs(fit_man,UV_man,X_man)$gamma
+ll_tar <- ar_loglike(X_man[,,-1],gamma_tar)
+ics[1,1] <- 2*(2*p + 2) - 2*ll_tar
+ics[1,2] <- log(n_bic)*(2*p + 2) - 2*ll_tar
+
+# 2. Simple AR model
+# 2 parameters
+fit_sar <- simple_ar_fit(X_man)
+gamma_sar <- fit_sar[1] + X_man[,,-n]*(1 - sum(fit_sar))
+ll_sar <- ar_loglike(X_man[,,-1],gamma_sar)
+ics[2,1] <- 2*2 - 2*ll_sar
+ics[2,2] <- log(n_bic)*2 - 2*ll_sar
+
+# 3. Edgewise AR model
+# 2(p \choose 2) parameters
+fit_ear <- edge_ar_fit(X_man)
+gamma_ear <- array(rep(fit_ear$A,n-1),c(p,p,n-1)) + X_man[,,-n]*(1 - array(rep(fit_ear$A+fit_ear$B,n-1),c(p,p,n-1)))
+ll_ear <- ar_loglike(X_man[,,-1],gamma_ear)
+ics[3,1] <- 2*(2*choose(p,2)) - 2*ll_ear
+ics[3,2] <- log(n_bic)*(2*choose(p,2)) - 2*ll_ear
+
+# 4. Edge means model
+# (p \choose 2) parameters
+X_man_mean <- apply(X_man[,,-1],c(1,2),mean)
+gamma_mean <- array(rep(X_man_mean,n-1),c(p,p,n-1))
+ll_mean <- ar_loglike(X_man[,,-1],gamma_mean)
+ics[4,1] <- 2*choose(p,2) - 2*ll_mean
+ics[4,2] <- log(n_bic)*choose(p,2) - 2*ll_mean
+
+# 5. Degree parameters/1-dim RDPG model
+# p parameters
+eigXmean <- eigen(X_man_mean)
+X_man_deg <- pmin(pmax(eigXmean$values[1]*tcrossprod(eigXmean$vectors[,1]),0),1)
+gamma_deg <- array(rep(X_man_deg,n-1),c(p,p,n-1))
+ll_deg <- ar_loglike(X_man[,,-1],gamma_deg)
+ics[5,1] <- 2*p - 2*ll_deg
+ics[5,2] <- log(n_bic)*p - 2*ll_deg
+
+# 6. ER/global mean
+p_mean <- mean(X_man[,,-1])
+gamma_global <- array(p_mean,c(p,p,n-1))
+ll_global <- ar_loglike(X_man[,,-1],gamma_global)
+ics[6,1] <- 2 - 2*ll_global
+ics[6,2] <- log(n_bic) - 2*ll_global
+
+saveRDS(ics,file='data/ics_man.rds')
+

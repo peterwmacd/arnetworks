@@ -1021,7 +1021,59 @@ simple_ar_predict <- function(n_out,fit,X_prev){
   }
 }
 
+#### for fitting an edge-specific AR(1) model ####
 
+edge_ar_fit <- function(X){
+  n <- dim(X)[3]
+  p <- dim(X)[1]
+  # estimate flip on
+  a1 <- apply(X[,,-1]*(1-X[,,-n]),c(1,2),sum)
+  a2 <- apply(1-X[,,-n],c(1,2),sum)
+  alpha_hat <- a1/a2
+  alpha_hat[is.nan(alpha_hat)] <- 1
+  # estimate flip off
+  b1 <- apply((1-X[,,-1])*X[,,-n],c(1,2),sum)
+  b2 <- apply(X[,,-n],c(1,2),sum)
+  beta_hat <- b1/b2
+  beta_hat[is.nan(beta_hat)] <- 1
+  return(list(A=alpha_hat,B=beta_hat))
+}
 
+edge_ar_predict <- function(n_out,fit,X_prev){
+  # dimensions
+  p <- dim(X_prev)[1]
+  # initialize current observation
+  X_curr <- X_prev
+  X_out <- array(NA,c(p,p,n_out))
+  for(t in 1:n_out){
+    # predict
+    X_out[,,t] <- fit$A + X_curr*(1 - fit$A - fit$B)
+    if(t < n_out){
+      # update X
+      X_curr <- X_out[,,t]
+    }
+  }
+  if(n_out==1){
+    return(X_out[,,1])
+  }
+  else{
+    return(X_out)
+  }
+}
 
+# helper to take above the diagonal of a square matrix
+ut <- function(M){
+  c(M[upper.tri(M,diag=FALSE)])
+}
+
+# both X and gamma are pxpx(n-1) dimensional arrays
+ar_loglike <- function(X,gamma){
+  n1 <- dim(X)[3]
+  # evaluate terms
+  temp <- (1-X)*logadj(1-gamma) + X*logadj(gamma)
+  # initialize loglike
+  ll_vec <- apply(temp,3,function(M){sum(ut(M))})
+  ll <- sum(ll_vec)
+  return(ll)
+}
 
