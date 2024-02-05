@@ -18,62 +18,6 @@ fit_man <- estim_transitivity(X_man,verbose=TRUE)
 # save fitted model
 saveRDS(fit_man,file='data/fit_man.rds')
 
-#### checking for empirical AR structure ####
-
-rho_man <- apply(X_man,c(1,2),
-                 function(v){cor(v[-1],v[-n])})
-
-acor_obs <- mean(abs(rho_man),na.rm=TRUE)
-acor_boot <- rep(0,100)
-for(bb in 1:100){
-  acor_boot[bb] <- mean(abs(apply(X_man[,,sample(1:n,n)],c(1,2),
-                         function(v){cor(v[-1],v[-n])})),na.rm=TRUE)
-}
-
-hist(acor_boot,xlim=c(0,1))
-abline(v=acor_obs,lty=2)
-
-# appears to be a significant amount of autocorrelation in the data
-
-#### COMMENTS on errors ####
-# initializers ab_init = c(1,1) works, other attempts threw fn=Inf error in global estimation...
-# returns (a,b) = (0.193,0.177)
-
-# with ab_init=c(0,1), no UB, fails at initialization stage, despite nearly identical input
-# parameters (although a,b, get *slightly* larger, seems that this breaks globalMLE_ab)
-
-# with ab_init=c(0,1), ab_max=4 works, returns (a,b)=(0.192,0.178)
-
-# with ab_init=c(0,0), ab_max=4 works, returns (a,b)=(0.193,0.178)
-
-# with ab_init=c(2,0), rough ab_max, returns (a,b)=c(0.193,0.177)
-
-# initializers ab_init=c(1,1) ***works w/o upper bound, fails with (too large) upper bound,
-# with upper box constraints, need to evaluate the boundary values?
-
-# note that large values for a,b lead to NaN values for globalMLE_ab, why?
-# eg
-# globalMLE_ab(c(7,7),A1,B1,A2,B2,U,V,thetaE,etaE)
-# returns NaN,
-# occurs when either argument increases
-
-# globalMLE_ab is a (negative) sum of O(p^2) ~ 1e4 terms
-# each of those terms is a sum of 2 means, each with O(n-1) ~ 1e1 terms
-# ie likely that Infs are occuring inside
-
-# NaN w/o division implies there must be a sum Inf + (-Inf) somewhere...
-# easy to see Inf arising: exp(800) = Inf, could occur with large b,V_ij
-
-# ERROR:
-# there is an ij such that:
-# - exp(b*Vij) = Inf
-# - (1- thetai*thetaj) < 0
-# - exp(a*Uij) = Inf
-
-# can fix this by either:
-# - bounding a,b so that exp(bV) and exp(aU) < Inf ### currently implemented
-# - bounding theta so that max(theta) < 1 (but might still get infinite fn values with large a,b)
-
 #### Model interpretation ####
 
 # load model

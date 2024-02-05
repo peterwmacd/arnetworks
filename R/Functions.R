@@ -871,8 +871,8 @@ transitivity_stats <- function(X){
   for(t in 1:(n-1)){
     for(i in 1:(p-1)){
       for(j in (i+1):p){
-        tmp <- U[i,j,t] <- U[j,i,t] <- sum(X[i,,t]*X[j,,t])
-        V[i,j,t] <- V[j,i,t] <- (sum(X[i,,t]+X[j,,t])-2*tmp)/2
+        tmp <- U[i,j,t] <- U[j,i,t] <- sum(X[i,,t]*X[j,,t])/(p-1)
+        V[i,j,t] <- V[j,i,t] <- (sum(X[i,,t]+X[j,,t]) - 2*X[i,j,t])/(p-1) - 2*tmp
       }
     }
   }
@@ -943,8 +943,8 @@ model_predict <- function(n_out,fit,X_prev){
   # populate U,V
   for(i in 1:(p-1)){
     for(j in (i+1):p){
-      tmp <- U[i,j] <- U[j,i] <- sum(X_curr[i,]*X_curr[j,])
-      V[i,j] <- V[j,i] <- (sum(X_curr[i,]+X_curr[j,])-2*tmp)/2
+      tmp <- U[i,j] <- U[j,i] <- sum(X_curr[i,]*X_curr[j,])/(p-1)
+      V[i,j] <- V[j,i] <- (sum(X_curr[i,]+X_curr[j,])-2*X_curr[i,j])/(p-1) - 2*tmp
     }
   }
   stats_curr <- list(U=U,V=V)
@@ -968,8 +968,8 @@ model_predict <- function(n_out,fit,X_prev){
       # populate U,V
       for(i in 1:(p-1)){
         for(j in (i+1):p){
-          tmp <- U[i,j] <- U[j,i] <- sum(X_curr[i,]*X_curr[j,])
-          V[i,j] <- V[j,i] <- (sum(X_curr[i,]+X_curr[j,])-2*tmp)/2
+          tmp <- U[i,j] <- U[j,i] <- sum(X_curr[i,]*X_curr[j,])/(p-1)
+          V[i,j] <- V[j,i] <- (sum(X_curr[i,]+X_curr[j,])-2*X_curr[i,j])/(p-1) - 2*tmp
         }
       }
       stats_curr <- list(U=U,V=V)
@@ -1047,7 +1047,7 @@ edge_ar_predict <- function(n_out,fit,X_prev){
   X_out <- array(NA,c(p,p,n_out))
   for(t in 1:n_out){
     # predict
-    X_out[,,t] <- fit$A + X_curr*(1 - fit$A - fit$B)
+    X_out[,,t] <- pmin(pmax(fit$A + X_curr*(1 - fit$A - fit$B),0),1)
     if(t < n_out){
       # update X
       X_curr <- X_out[,,t]

@@ -2,6 +2,7 @@
 setwd('~/packages/arnetworks/real_data/')
 # load package
 library(devtools)
+library(pROC)
 load_all()
 
 # conference network
@@ -113,12 +114,6 @@ lines(1:(n-1),pred_dens,col='orange',type='p')
 dev.off()
 
 #### link prediction ####
-library(pROC)
-
-# helper to take above the diagonal of a square matrix
-ut <- function(M){
-  c(M[upper.tri(M,diag=FALSE)])
-}
 
 # vary the size of training set, prediction horizon
 # set training sets n_train=10,20,30

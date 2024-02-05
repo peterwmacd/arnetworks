@@ -19,7 +19,7 @@ estim_transitivity <- function(X,
   A2 = (1 - X[,,2:n])*( X[,,2:n-1])
   B2 = X[,,2:n]*(X[,,2:n-1])
   # rough maximum for a,b: want exp(bV) and exp(aU) < Inf; ok if < 400
-  ab_max <- 400 / max(c(U,V))
+  ab_max <- (400*(p-1)) / max(c(U,V))
   #Initialization:
   ab1 <- ab_init
   thetaME = pmax(pmin(apply((1 +exp(ab1[1]*U) + exp(ab1[2]*V) )/exp(ab1[1]*U),c(1,2),min),thetamax_init)-0.2,0)
@@ -38,8 +38,8 @@ estim_transitivity <- function(X,
   fn1 = tmp0$value
   if(verbose){
     print(ab1)
+    print('done rough initialization')
   }
-  print('done rough initialization')
 
   for (it in 1:iter){
     thetamax = apply((1 +exp(ab1[1]*U) + exp(ab1[2]*V) )/exp(ab1[1]*U),c(1,2),min)
@@ -209,8 +209,8 @@ estim_transitivity <- function(X,
       Al[,i] = alSearch(g_all[,,i], El[,i], gamma_eta)
     }
     # refinement for a,b
-    ab2[1] = stats::optim(ab1[1],  globalMLE_refine_a,  method = 'L-BFGS-B', al = Al[,1], A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = U, V = V, ab = ab1, thetavec = thetaE, etavec = etaE, lower = max(0.01, ab1[1]-r_tilda), upper = ab1[1]+r_tilda)$par
-    ab2[2] = stats::optim(ab1[2],  globalMLE_refine_b,  method = 'L-BFGS-B', al = Al[,2], A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = U, V = V, ab = ab1, thetavec = thetaE, etavec = etaE, lower = max(0.01, ab1[2]-r_tilda), upper = ab1[2]+r_tilda)$par
+    ab2[1] = stats::optim(ab1[1],  globalMLE_refine_a,  method = 'L-BFGS-B', al = Al[,1], A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = U, V = V, ab = ab1, thetavec = thetaE, etavec = etaE, lower = max(0.01, ab1[1]-(p-1)*r_tilda), upper = ab1[1]+(p-1)*r_tilda)$par
+    ab2[2] = stats::optim(ab1[2],  globalMLE_refine_b,  method = 'L-BFGS-B', al = Al[,2], A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = U, V = V, ab = ab1, thetavec = thetaE, etavec = etaE, lower = max(0.01, ab1[2]-(p-1)*r_tilda), upper = ab1[2]+(p-1)*r_tilda)$par
     if(verbose){
       print(ab2)
       print(paste0('Done a,b refinement ',refine))
