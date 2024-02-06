@@ -96,7 +96,7 @@ print(table(levels))
 # same scatter plot of theta and eta parameters for different hierarchical levels
 pdf(file='fit_plots_man/theta_scatter_man1.pdf')
 plot(fit_man1$theta,fit_man1$eta,
-     main='Plot of theta-hat vs eta-hat, by org level, regime 1',xlab='theta-hat',ylab='eta-hat',
+     main='Plot of theta-hat vs eta-hat, by org level, period 1',xlab='theta-hat',ylab='eta-hat',
      xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels)
 abline(lm(fit_man1$eta~fit_man1$theta),lty=2)
 dev.off()
@@ -106,7 +106,7 @@ dev.off()
 # same scatter plot of theta and eta parameters for different hierarchical levels
 pdf(file='fit_plots_man/theta_scatter_man2.pdf')
 plot(fit_man2$theta,fit_man2$eta,
-     main='Plot of theta-hat vs eta-hat, by org level, regime 2',xlab='theta-hat',ylab='eta-hat',
+     main='Plot of theta-hat vs eta-hat, by org level, period 2',xlab='theta-hat',ylab='eta-hat',
      xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels)
 abline(lm(fit_man2$eta~fit_man2$theta),lty=2)
 dev.off()

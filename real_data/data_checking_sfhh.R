@@ -6,6 +6,9 @@ hollowize <- function(M){
   M - diag(diag(M))
 }
 
+# colorblind palete
+cbp <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
 #### importing data ####
 setwd('~/packages/arnetworks/real_data/')
 
@@ -88,11 +91,11 @@ grt <- apply(grow_sub,3,sum)/p
 dst <- apply(diss_sub,3,sum)/p
 
 pdf('data_plots_sfhh/sfhh_grds.pdf',width=7,height=5)
-plot(grt,type='b',col='blue',main='Dynamic activity',
+plot(grt,type='b',col=cbp[3],main='Dynamic activity',
      ylim=c(0,max(grt)+1),ylab='Grown or dissolved edges / nNodes')
-lines(dst,type='b',col='red')
-abline(h=mean(grt),col='blue',lty=3)
-abline(h=mean(dst),col='red',lty=3)
+lines(dst,type='b',col=cbp[7])
+abline(h=mean(grt),col=cbp[3],lty=3)
+abline(h=mean(dst),col=cbp[7],lty=3)
 abline(h=1,lty=2)
 dev.off()
 
@@ -106,11 +109,11 @@ diss_norm[(X[,,-n]==0)] <- NA
 dst_norm <- apply(diss_norm,3,mean,na.rm=TRUE)
 
 pdf('data_plots_sfhh/sfhh_grds_norm.pdf',width=7,height=5)
-plot(grt_norm,type='b',col='blue',main='Normalized dynamic activity',
-     ylim=c(0,1),ylab='Growth or dissolution prob.')
-lines(dst_norm,type='b',col='red')
-abline(h=mean(grt_norm),col='blue',lty=3)
-abline(h=mean(dst_norm),col='red',lty=3)
+plot(grt_norm,type='b',col=cbp[3],main='Dynamic activity',
+     ylim=c(0,1),ylab='Relative freq.')
+lines(dst_norm,type='b',col=cbp[7])
+abline(h=mean(grt_norm),col=cbp[3],lty=3)
+abline(h=mean(dst_norm),col=cbp[7],lty=3)
 abline(h=1,lty=2)
 dev.off()
 
@@ -132,18 +135,18 @@ dst_norm_sparse <- apply(diss_norm_sparse,3,mean,na.rm=TRUE)
 grt_norm_dense <- apply(grow_norm_dense,3,mean,na.rm=TRUE)
 dst_norm_dense <- apply(diss_norm_dense,3,mean,na.rm=TRUE)
 
-plot(grt_norm_sparse,type='b',col='blue',main='Normalized dynamic activity, sparse nodes',
+plot(grt_norm_sparse,type='b',col=cbp[3],main='Normalized dynamic activity, sparse nodes',
      ylim=c(0,1),ylab='Growth or dissolution prob.')
-lines(dst_norm_sparse,type='b',col='red')
-abline(h=mean(grt_norm_sparse),col='blue',lty=3)
-abline(h=mean(dst_norm_sparse),col='red',lty=3)
+lines(dst_norm_sparse,type='b',col=cbp[7])
+abline(h=mean(grt_norm_sparse),col=cbp[3],lty=3)
+abline(h=mean(dst_norm_sparse),col=cbp[7],lty=3)
 abline(h=1,lty=2)
 
-plot(grt_norm_dense,type='b',col='blue',main='Normalized dynamic activity, dense nodes',
+plot(grt_norm_dense,type='b',col=cbp[3],main='Normalized dynamic activity, dense nodes',
      ylim=c(0,1),ylab='Growth or dissolution prob.')
-lines(dst_norm_dense,type='b',col='red')
-abline(h=mean(grt_norm_dense),col='blue',lty=3)
-abline(h=mean(dst_norm_dense),col='red',lty=3)
+lines(dst_norm_dense,type='b',col=cbp[7])
+abline(h=mean(grt_norm_dense),col=cbp[3],lty=3)
+abline(h=mean(dst_norm_dense),col=cbp[7],lty=3)
 abline(h=1,lty=2)
 
 # looking for whether p(grow) = 1 - prob(dissolve) which would imply that there
@@ -179,9 +182,9 @@ gr_cn_summary <- table(gr_cn[,1],gr_cn[,2])
 pdf('data_plots_sfhh/sfhh_grtrans.pdf',width=7,height=5)
 plot(as.numeric(colnames(gr_cn_summary)),
      gr_cn_summary[2,]/colSums(gr_cn_summary),
-     type='p',pch=16,cex=log(colSums(gr_cn_summary))/5,col='blue',
+     type='p',pch=16,cex=log(colSums(gr_cn_summary))/5,col=cbp[3],
      main='Transitivity effects on grown edges',
-     xlab='nCommonNeighbors @ t-1',ylab='P(grow edge) @ t')
+     xlab='# common neighbours',ylab='Relative freq. grown edge')
 abline(h=0,lty=2)
 abline(h=1,lty=2)
 dev.off()
@@ -215,9 +218,9 @@ ds_ncn_summary <- table(ds_ncn[,1],ds_ncn[,2])
 pdf('data_plots_sfhh/sfhh_dstrans.pdf',width=7,height=5)
 plot(as.numeric(colnames(ds_ncn_summary)),
      ds_ncn_summary[2,]/colSums(ds_ncn_summary),
-     type='p',pch=16,cex=log(colSums(ds_ncn_summary))/4,col='red',
+     type='p',pch=16,cex=log(colSums(ds_ncn_summary))/4,col=cbp[7],
      main='Transitivity effects on dissolved edges',
-     xlab='nDisjointNeighbors/2 @ t-1',ylab='P(dissolve edge) @ t')
+     xlab='# disjoint neighbours',ylab='Relative freq. dissolved edge')
 abline(h=0,lty=2)
 abline(h=1,lty=2)
 dev.off()
@@ -231,7 +234,7 @@ gr_nhet <- apply(grow_sub,1,sum)
 
 pdf('data_plots_sfhh/sfhh_grnhet.pdf',width=7,height=5)
 hist(gr_nhet,20,
-     col='blue',
+     col=cbp[3],
      main="Growing edge node heterogeneity")
 dev.off()
 
@@ -240,7 +243,7 @@ ds_nhet <- apply(diss_sub,1,sum)
 
 pdf('data_plots_sfhh/sfhh_dsnhet.pdf',width=7,height=5)
 hist(ds_nhet,20,
-     col='red',
+     col=cbp[7],
      main="Dissolving edge node heterogeneity")
 dev.off()
 
@@ -266,7 +269,7 @@ plot(deg_nhet,gr_nhet + ds_nhet,
 abline(a=0,b=2,lty=2) # upper bound on dynamic activity
 lines(deg_nhet[order(deg_nhet)],
       loess(gr_nhet + ds_nhet ~ deg_nhet,degree=1)$fitted[order(deg_nhet)],
-      col='blue',lty=1,lwd=1.5)
+      col=cbp[3],lty=1,lwd=1.5)
 dev.off()
 
 #### looking at local node densities ####
@@ -345,7 +348,7 @@ library(latex2exp)
 pdf('data_plots_sfhh/sfhh_grpers.pdf',width=7,height=5)
 barplot(c(gr_11/gr_1t,gr_21/gr_2t,gr_31/gr_3t),
         width=log(c(gr_1t,gr_2t,gr_3t)),
-        col='blue',
+        col=cbp[3],
         main='Persistence effects on grown edges',
         ylab='P(grow edge) @ t',
         names.arg=c(TeX('$X_{{ij}}^{{t-2}}=1$'),
@@ -356,7 +359,7 @@ dev.off()
 pdf('data_plots_sfhh/sfhh_dspers.pdf',width=7,height=5)
 barplot(c(ds_11/ds_1t,ds_21/ds_2t,ds_31/ds_3t),
         width=log(c(ds_1t,ds_2t,ds_3t)),
-        col='red',
+        col=cbp[7],
         main='Persistence effects on dissolved edges',
         ylab='P(dissolve edge) @ t',
         names.arg=c(TeX('$X_{{ij}}^{{t-2}}=0$'),
@@ -399,7 +402,7 @@ ds_rate <- apply(diss_sub,3,sum) / apply(X[,,-n],3,sum)
 pdf('data_plots_sfhh/sfhh_grgdens.pdf',width=7,height=5)
 plot(dens[-n],gr_rate,
      main='Global density effects on grown edges',
-     col='blue',pch=16,
+     col=cbp[3],pch=16,
      xlab='Edge density @ t-1',
      ylab='P(grow edge) @ t')
 dev.off()
@@ -408,7 +411,7 @@ dev.off()
 pdf('data_plots_sfhh/sfhh_dsgdens.pdf',width=7,height=5)
 plot(dens[-n],ds_rate,
      main='Global density effects on dissolved edges',
-     col='red',pch=16,
+     col=cbp[7],pch=16,
      xlab='Edge density @ t-1',
      ylab='P(dissolve edge) @ t')
 dev.off()
@@ -454,7 +457,7 @@ ds_localdens_summary <- table(ds_localdens[,1],ds_localdens[,2])
 pdf('data_plots_sfhh/sfhh_grldens.pdf',width=7,height=5)
 plot(as.numeric(colnames(gr_localdens_summary)),
      gr_localdens_summary[2,]/colSums(gr_localdens_summary),
-     type='p',pch=16,cex=log(colSums(gr_localdens_summary))/8,col='blue',
+     type='p',pch=16,cex=log(colSums(gr_localdens_summary))/8,col=cbp[3],
      ylim=c(0,.2),
      main='Local density effects on grown edges',
      xlab='Degree i + Degree j @ t-1',ylab='P(grow edge) @ t')
@@ -465,7 +468,7 @@ dev.off()
 pdf('data_plots_sfhh/sfhh_dsldens.pdf',width=7,height=5)
 plot(as.numeric(colnames(ds_localdens_summary)),
      ds_localdens_summary[2,]/colSums(ds_localdens_summary),
-     type='p',pch=16,cex=log(colSums(ds_localdens_summary))/6,col='red',
+     type='p',pch=16,cex=log(colSums(ds_localdens_summary))/6,col=cbp[7],
      main='Local density effects on dissolved edges',
      xlab='Degree i + Degree j @ t-1',ylab='P(dissolve edge) @ t')
 abline(h=0,lty=2)
