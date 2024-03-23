@@ -1,5 +1,6 @@
 # wrapper function for estimation with the transitivity model
 
+
 estim_transitivity <- function(X,
                                # optimization parameters
                                iter=10,delta=1e-4,verbose=FALSE,

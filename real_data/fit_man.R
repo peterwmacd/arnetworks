@@ -3,6 +3,7 @@ setwd('~/packages/arnetworks/real_data/')
 # load packages (incl. arnetworks)
 library(devtools)
 library(pROC)
+library(latex2exp)
 load_all()
 
 # manufacturing network
@@ -25,6 +26,8 @@ n1 <- dim(X_man1)[3]
 UV_man1 <- transitivity_stats(X_man1)
 
 fit_man1 <- estim_transitivity(X_man1,verbose=TRUE)
+# compare to
+fit_man1A <- estTransitivity(X_man1,verbose=TRUE)
 # save fitted model
 saveRDS(fit_man1,file='data/fit_man1.rds')
 
@@ -95,8 +98,9 @@ print(table(levels))
 
 # same scatter plot of theta and eta parameters for different hierarchical levels
 pdf(file='fit_plots_man/theta_scatter_man1.pdf')
+par(mar=c(4,5,4,4))
 plot(fit_man1$theta,fit_man1$eta,
-     main='Plot of theta-hat vs eta-hat, by org level, period 1',xlab='theta-hat',ylab='eta-hat',
+     main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
      xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels)
 abline(lm(fit_man1$eta~fit_man1$theta),lty=2)
 dev.off()
@@ -105,8 +109,9 @@ dev.off()
 
 # same scatter plot of theta and eta parameters for different hierarchical levels
 pdf(file='fit_plots_man/theta_scatter_man2.pdf')
+par(mar=c(4,5,4,4))
 plot(fit_man2$theta,fit_man2$eta,
-     main='Plot of theta-hat vs eta-hat, by org level, period 2',xlab='theta-hat',ylab='eta-hat',
+     main='Period 2',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
      xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels)
 abline(lm(fit_man2$eta~fit_man2$theta),lty=2)
 dev.off()
@@ -192,7 +197,7 @@ for(n_out in 1:3){
     par(mfrow=c(1,1))
     temp <- roc(response=response_combined[[n_out]],predictor=pred_degree_combined[[n_out]])
     plot(temp,col=cbp[3],
-         main=paste0('ROC, n_step=',n_out))
+         main=TeX(paste0('ROC, $n_{{step}}=',n_out,'$')))
     # ROC for model-based prediction
     temp2 <- roc(response=response_combined[[n_out]],predictor=pred_model_combined[[n_out]])
     plot(temp2,col=cbp[2],add=TRUE)

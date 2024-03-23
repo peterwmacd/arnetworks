@@ -435,6 +435,7 @@ localMLE_refine_theta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, et
 }
 
 grr_localMLE_refine_theta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etavec, i){
+  p <- dim(A1)[1]
   thetai = par
   a = ab[1]
   b = ab[2]
@@ -536,6 +537,7 @@ localMLE_refine_eta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etav
 }
 
 grr_localMLE_refine_eta = function(par, al, A1, B1, A2, B2, U, V, ab, thetavec, etavec, i){
+  p <- dim(A1)[1]
   etai = par
   a = ab[1]
   b = ab[2]

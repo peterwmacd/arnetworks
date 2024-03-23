@@ -83,7 +83,8 @@ diss_sub <- diss[node_keep,node_keep,]
 dens <- apply(X,3,mean)
 
 pdf('data_plots_sfhh/sfhh_dens.pdf',width=7,height=5)
-plot(dens,type='b',main='Edge density')
+plot(dens,type='b',main='Edge density',
+     xlab='',ylab='Edge density')
 dev.off()
 
 # scaled growing/dissolving
@@ -92,11 +93,24 @@ dst <- apply(diss_sub,3,sum)/p
 
 pdf('data_plots_sfhh/sfhh_grds.pdf',width=7,height=5)
 plot(grt,type='b',col=cbp[3],main='Dynamic activity',
-     ylim=c(0,max(grt)+1),ylab='Grown or dissolved edges / nNodes')
+     ylim=c(0,max(grt)+1),ylab='Grown or dissolved edges / nNodes',xlab='')
 lines(dst,type='b',col=cbp[7])
 abline(h=mean(grt),col=cbp[3],lty=3)
 abline(h=mean(dst),col=cbp[7],lty=3)
 abline(h=1,lty=2)
+dev.off()
+
+# O(p^2) scaled growth and dissolution
+grt_p2 <- apply(grow_sub,3,sum)/(p*(p-1))
+dst_p2 <- apply(diss_sub,3,sum)/(p*(p-1))
+
+pdf('data_plots_sfhh/sfhh_grds_p2.pdf',width=7,height=5)
+plot(grt_p2,type='b',col=cbp[3],main='Dynamic activity',
+     ylim=c(0,0.05),ylab='Dynamic activity - form/dissolve',xlab='')
+lines(dst_p2,type='b',col=cbp[7])
+abline(h=mean(grt_p2),col=cbp[3],lty=3)
+abline(h=mean(dst_p2),col=cbp[7],lty=3)
+#abline(h=1,lty=2)
 dev.off()
 
 # normalized growth and dissolution
@@ -117,37 +131,37 @@ abline(h=mean(dst_norm),col=cbp[7],lty=3)
 abline(h=1,lty=2)
 dev.off()
 
-# growth and dissolution prob. after conditioning on density
-e_sparse <- (apply(X,c(1,2),mean) < 0.2)
-e_dense <- (apply(X,c(1,2),mean) >= 0.2)
-
-diss_norm_sparse <- diss_norm_dense <- diss_norm
-grow_norm_sparse <- grow_norm_dense <- grow_norm
-for(kk in 1:dim(diss_norm)[3]){
-  diss_norm_sparse[,,kk][e_dense] <- NA
-  grow_norm_sparse[,,kk][e_dense] <- NA
-  diss_norm_dense[,,kk][e_sparse] <- NA
-  grow_norm_dense[,,kk][e_sparse] <- NA
-}
-
-grt_norm_sparse <- apply(grow_norm_sparse,3,mean,na.rm=TRUE)
-dst_norm_sparse <- apply(diss_norm_sparse,3,mean,na.rm=TRUE)
-grt_norm_dense <- apply(grow_norm_dense,3,mean,na.rm=TRUE)
-dst_norm_dense <- apply(diss_norm_dense,3,mean,na.rm=TRUE)
-
-plot(grt_norm_sparse,type='b',col=cbp[3],main='Normalized dynamic activity, sparse nodes',
-     ylim=c(0,1),ylab='Growth or dissolution prob.')
-lines(dst_norm_sparse,type='b',col=cbp[7])
-abline(h=mean(grt_norm_sparse),col=cbp[3],lty=3)
-abline(h=mean(dst_norm_sparse),col=cbp[7],lty=3)
-abline(h=1,lty=2)
-
-plot(grt_norm_dense,type='b',col=cbp[3],main='Normalized dynamic activity, dense nodes',
-     ylim=c(0,1),ylab='Growth or dissolution prob.')
-lines(dst_norm_dense,type='b',col=cbp[7])
-abline(h=mean(grt_norm_dense),col=cbp[3],lty=3)
-abline(h=mean(dst_norm_dense),col=cbp[7],lty=3)
-abline(h=1,lty=2)
+# # growth and dissolution prob. after conditioning on density
+# e_sparse <- (apply(X,c(1,2),mean) < 0.2)
+# e_dense <- (apply(X,c(1,2),mean) >= 0.2)
+#
+# diss_norm_sparse <- diss_norm_dense <- diss_norm
+# grow_norm_sparse <- grow_norm_dense <- grow_norm
+# for(kk in 1:dim(diss_norm)[3]){
+#   diss_norm_sparse[,,kk][e_dense] <- NA
+#   grow_norm_sparse[,,kk][e_dense] <- NA
+#   diss_norm_dense[,,kk][e_sparse] <- NA
+#   grow_norm_dense[,,kk][e_sparse] <- NA
+# }
+#
+# grt_norm_sparse <- apply(grow_norm_sparse,3,mean,na.rm=TRUE)
+# dst_norm_sparse <- apply(diss_norm_sparse,3,mean,na.rm=TRUE)
+# grt_norm_dense <- apply(grow_norm_dense,3,mean,na.rm=TRUE)
+# dst_norm_dense <- apply(diss_norm_dense,3,mean,na.rm=TRUE)
+#
+# plot(grt_norm_sparse,type='b',col=cbp[3],main='Normalized dynamic activity, sparse nodes',
+#      ylim=c(0,1),ylab='Growth or dissolution prob.')
+# lines(dst_norm_sparse,type='b',col=cbp[7])
+# abline(h=mean(grt_norm_sparse),col=cbp[3],lty=3)
+# abline(h=mean(dst_norm_sparse),col=cbp[7],lty=3)
+# abline(h=1,lty=2)
+#
+# plot(grt_norm_dense,type='b',col=cbp[3],main='Normalized dynamic activity, dense nodes',
+#      ylim=c(0,1),ylab='Growth or dissolution prob.')
+# lines(dst_norm_dense,type='b',col=cbp[7])
+# abline(h=mean(grt_norm_dense),col=cbp[3],lty=3)
+# abline(h=mean(dst_norm_dense),col=cbp[7],lty=3)
+# abline(h=1,lty=2)
 
 # looking for whether p(grow) = 1 - prob(dissolve) which would imply that there
 # is no observed AR structure, this is not the case, both groups show evidence of
@@ -184,7 +198,7 @@ plot(as.numeric(colnames(gr_cn_summary)),
      gr_cn_summary[2,]/colSums(gr_cn_summary),
      type='p',pch=16,cex=log(colSums(gr_cn_summary))/5,col=cbp[3],
      main='Transitivity effects on grown edges',
-     xlab='# common neighbours',ylab='Relative freq. grown edge')
+     xlab='Number of common neighbours',ylab='Relative freq. formed edge')
 abline(h=0,lty=2)
 abline(h=1,lty=2)
 dev.off()
@@ -220,7 +234,7 @@ plot(as.numeric(colnames(ds_ncn_summary)),
      ds_ncn_summary[2,]/colSums(ds_ncn_summary),
      type='p',pch=16,cex=log(colSums(ds_ncn_summary))/4,col=cbp[7],
      main='Transitivity effects on dissolved edges',
-     xlab='# disjoint neighbours',ylab='Relative freq. dissolved edge')
+     xlab='Number of disjoint neighbours',ylab='Relative freq. dissolved edge')
 abline(h=0,lty=2)
 abline(h=1,lty=2)
 dev.off()

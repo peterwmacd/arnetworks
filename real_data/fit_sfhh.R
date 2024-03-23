@@ -3,6 +3,7 @@ setwd('~/packages/arnetworks/real_data/')
 # load package
 library(devtools)
 library(pROC)
+library(latex2exp)
 load_all()
 
 # colorblind palete
@@ -32,22 +33,25 @@ fit_sfhh <- readRDS('data/fit_sfhh.rds')
 # histogram of fitted thetas and etas
 pdf(file='fit_plots_sfhh/theta_hist_sfhh.pdf')
 hist(fit_sfhh$theta,20,
-     main='Histogram of theta-hat',xlab='',col=cbp[3],xlim=c(0,1))
+     main=TeX('Histogram of $\\{ \\hat{\\xi}_i \\}_{i=1}^{200}$'),
+     xlab='',col=cbp[3],xlim=c(0,1))
 abline(v=mean(fit_sfhh$theta),lty=2)
 dev.off()
 # generally small (mean 0.18) with a long right tail
 
 pdf(file='fit_plots_sfhh/eta_hist_sfhh.pdf')
 hist(fit_sfhh$eta,20,
-     main='Histogram of eta-hat',xlab='',col=cbp[7],xlim=c(.8,1.4))
+     main=TeX('Histogram of $\\{ \\hat{\\eta}_i \\}_{i=1}^{200}$'),
+     xlab='',col=cbp[7],xlim=c(.8,1.4))
 abline(v=mean(fit_sfhh$eta),lty=2)
 dev.off()
 # larger, less dispersed, mean around 1.075
 
 # xy plot of fitted thetas and etas
 pdf(file='fit_plots_sfhh/theta_scatter_sfhh.pdf')
+par(mar=c(4,5,2,2))
 plot(fit_sfhh$theta,fit_sfhh$eta,
-     main='Plot of theta-hat vs eta-hat',xlab='theta-hat',ylab='eta-hat',
+     main='',xlab=TeX('$\\hat{\\xi}_i$'),ylab=TeX('$\\hat{\\eta}_i$'),
      xlim=c(0,1),ylim=c(.8,1.4))
 abline(lm(fit_sfhh$eta~fit_sfhh$theta),lty=2)
 dev.off()

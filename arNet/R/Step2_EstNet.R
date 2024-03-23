@@ -15,7 +15,6 @@ fg_array = function(fg, global, stats){
 }
 
 
-
 ### 1.1  part of global log likelihood function:  for alpha  or beta separately
 logl_part = function(A, B, fg, global, stats, localMat){
   dm = dim(stats)
@@ -255,7 +254,6 @@ globalMLE_group = function(par, A1, B1, A2, B2, fij, gAlphaVal, statsAlpha, xiMa
 #'
 #' @importFrom stats optim
 #' @export
-
 estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta, shrGPrm,
                   initXi = NA, initEta = NA, updateMethod="sequential", tol = 0.01, maxIter = 100){
   #Preparation:
