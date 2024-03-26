@@ -8,11 +8,8 @@ estTransitivity(
   X,
   U = NULL,
   V = NULL,
-  globInit = c(0, 0),
   rSeqGlob = c(0.5, 0.1),
   rSeqLoc = c(0.5, 0.1),
-  tol = 1e-04,
-  maxIter = 100,
   verbose = FALSE
 )
 }
@@ -27,18 +24,11 @@ ignored in the likelihood calculations. If not provided, it will be calculated i
 disjoint neighbour statistics. If a \eqn{p \times p \times n} array is provided, the \code{n}th slice is
 ignored in the likelihood calculations. If not provided, it will be calculated internally from \code{X}.}
 
-\item{globInit}{Initial values for \eqn{a} and \eqn{b}.}
-
 \item{rSeqGlob}{The sequence of control parameters for the refinement of global parameters. Defaults
 to \code{c(0.5,0.1)}. Note that \code{rSeqGlob} and \code{rSeqLoc} must have the same length.}
 
 \item{rSeqLoc}{The sequence of control parameters for the refinement of local parameters. Defaults
 to \code{c(0.5,0.1)}.}
-
-\item{tol}{Tolerance for the iterative initialization algorithm. Defaults to \code{1e-4}.}
-
-\item{maxIter}{Maximum iterations allowed for the iterative initialization algorithm.
-Defaults to \code{100}.}
 
 \item{verbose}{An indicator, if \code{TRUE} there will be printed console output providing optimization
 progress. defaults to \code{FALSE}.}
@@ -74,7 +64,7 @@ is the normalized number of disjoint neighbours of nodes \eqn{i} and \eqn{j} in 
 
 Estimation Procedure:
 \enumerate{
-\item \strong{Initialization}: Iteratively initializes the parameters.
+\item \strong{Initialization}: automatic initialization of global parameters.
 \item \strong{Local Optimization}: With global parameters set to their initial values, local
 log-likelihood functions are maximized through a Newton method to update local parameter estimates.
 \item \strong{Global Optimization}: With local parameters estimated in the previous stage, a global
@@ -95,9 +85,6 @@ X = simulated_data$X
 U = simulated_data$U
 V = simulated_data$V
 
-# Initialize global parameters
-globInit = rep(50, 2)
-
-result = estTransitivity(X, U, V, globInit)
+result = estTransitivity(X, U, V)
 
 }

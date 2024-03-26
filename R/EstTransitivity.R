@@ -73,7 +73,7 @@ statsTransitivity <- function(X){
 #'
 #' Estimation Procedure:
 #' \enumerate{
-#'   \item \strong{Initialization}: Iteratively initializes the parameters.
+#'   \item \strong{Initialization}: automatic initialization of global parameters.
 #'   \item \strong{Local Optimization}: With global parameters set to their initial values, local
 #'    log-likelihood functions are maximized through a Newton method to update local parameter estimates.
 #'   \item \strong{Global Optimization}: With local parameters estimated in the previous stage, a global
@@ -91,14 +91,10 @@ statsTransitivity <- function(X){
 #' @param V A \eqn{p \times p \times n} or \eqn{p \times p \times (n-1)} array of the normalized number of
 #' disjoint neighbour statistics. If a \eqn{p \times p \times n} array is provided, the \code{n}th slice is
 #' ignored in the likelihood calculations. If not provided, it will be calculated internally from \code{X}.
-#' @param globInit Initial values for \eqn{a} and \eqn{b}.
 #' @param rSeqGlob The sequence of control parameters for the refinement of global parameters. Defaults
 #' to \code{c(0.5,0.1)}. Note that \code{rSeqGlob} and \code{rSeqLoc} must have the same length.
 #' @param rSeqLoc The sequence of control parameters for the refinement of local parameters. Defaults
 #' to \code{c(0.5,0.1)}.
-#' @param tol Tolerance for the iterative initialization algorithm. Defaults to \code{1e-4}.
-#' @param maxIter Maximum iterations allowed for the iterative initialization algorithm.
-#' Defaults to \code{100}.
 #' @param verbose An indicator, if \code{TRUE} there will be printed console output providing optimization
 #' progress. defaults to \code{FALSE}.
 #'
@@ -120,16 +116,12 @@ statsTransitivity <- function(X){
 #' U = simulated_data$U
 #' V = simulated_data$V
 #'
-#' # Initialize global parameters
-#' globInit = rep(50, 2)
-#'
-#' result = estTransitivity(X, U, V, globInit)
+#' result = estTransitivity(X, U, V)
 #'
 #' @export
 estTransitivity <- function(X,U=NULL,V=NULL,
-                            globInit=c(0,0),
                             rSeqGlob=c(0.5,0.1),rSeqLoc=c(0.5,0.1),
-                            tol=1e-4,maxIter=100,verbose=FALSE){
+                            verbose=FALSE){
   # dimensions
   p <- dim(X)[1]
   n <- dim(X)[3]
@@ -186,23 +178,25 @@ estTransitivity <- function(X,U=NULL,V=NULL,
 
   # additional control for optimization of a,b: want exp(bV) and exp(aU) < Inf
   ab_max <- (400*(p-1)) / max(c(Uc,Vc))
-  ximax_init <- 1
-  etamax_init <- 1
+  #ximax_init <- 1
+  #etamax_init <- 1
+  maxIter <- 5
+  tol <- 1e-4
 
   #Rough Initialization:
-  ab1 <- globInit
-  xiME = pmax(pmin(apply((1 +exp(ab1[1]*Uc) + exp(ab1[2]*Vc) )/exp(ab1[1]*Uc),c(1,2),min),ximax_init)-0.2,0)
-  etaME =  pmax(pmin(apply((1 +exp(ab1[2]*Vc) + exp(ab1[1]*Uc) )/exp(ab1[2]*Vc),c(1,2),min),etamax_init)-0.2,0)
-  xiE = thetaEst_et(xiME)
-  etaE =  thetaEst_et(etaME)
+  # ab1 <- globInit
+  # xiME = pmax(pmin(apply((1 +exp(ab1[1]*Uc) + exp(ab1[2]*Vc) )/exp(ab1[1]*Uc),c(1,2),min),ximax_init)-0.2,0)
+  # etaME =  pmax(pmin(apply((1 +exp(ab1[2]*Vc) + exp(ab1[1]*Uc) )/exp(ab1[2]*Vc),c(1,2),min),etamax_init)-0.2,0)
+  # xiE = thetaEst_et(xiME)
+  # etaE =  thetaEst_et(etaME)
   # if(verbose){
   #   cat('Current xi quartiles:',stats::quantile(xiE),
   #       '\nCurrent eta quartiles:',stats::quantile(etaE),'\n')
   # }
 
-  tmp0 = stats::optim(ab1, globalMLE_ab_et, gr = grr_globalMLE_ab_et, method = "L-BFGS-B",
+  tmp0 = stats::optim(c(tol,tol), globalMLE_ab_et, gr = grr_globalMLE_ab_et, method = "L-BFGS-B",
                       lower = c(0,0), upper=rep(ab_max,2),
-                      A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = Uc, V = Vc, thetavec = xiE, etavec = etaE)
+                      A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = Uc, V = Vc, thetavec = rep(1,p), etavec = rep(1,p))
   ab1 = tmp0$par
   fn1 = tmp0$value
   # if(verbose){
@@ -225,10 +219,10 @@ estTransitivity <- function(X,U=NULL,V=NULL,
 
     xiE = thetaEst_et(xiME)
     etaE = thetaEst_et(etaME)
-    if(verbose){
-      cat('Current xi quartiles:',stats::quantile(xiE),
-          '\nCurrent eta quartiles:',stats::quantile(etaE),'\n')
-    }
+    # if(verbose){
+    #   cat('Current xi quartiles:',stats::quantile(xiE),
+    #       '\nCurrent eta quartiles:',stats::quantile(etaE),'\n')
+    # }
     xiME = outer(xiE, xiE)
     etaME = outer(etaE, etaE)
 
@@ -238,9 +232,9 @@ estTransitivity <- function(X,U=NULL,V=NULL,
                         A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = Uc, V = Vc, thetavec = xiE, etavec = etaE)
     ab2 = tmp2$par
     fn2 = tmp2$value
-    if(verbose){
-      cat('Current (a,b):',ab1,'\nDone initialization iter',it,'\n')
-    }
+    # if(verbose){
+    #   cat('Current (a,b):',ab1,'\nDone initialization iter',it,'\n')
+    # }
 
     if(mean(abs(ab2-ab1))<tol | fn1<=fn2) {
       break
