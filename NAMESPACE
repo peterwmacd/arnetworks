@@ -2,4 +2,5 @@
 
 export(estTransitivity)
 export(predictNet)
+export(predictTransitivity)
 export(statsTransitivity)

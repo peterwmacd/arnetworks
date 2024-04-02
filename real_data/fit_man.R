@@ -98,10 +98,10 @@ print(table(levels))
 
 # same scatter plot of theta and eta parameters for different hierarchical levels
 pdf(file='fit_plots_man/theta_scatter_man1.pdf')
-par(mar=c(4,5,4,4))
+par(mar=c(4,5.5,4,4))
 plot(fit_man1$theta,fit_man1$eta,
      main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-     xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels)
+     xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8)
 abline(lm(fit_man1$eta~fit_man1$theta),lty=2)
 dev.off()
 
@@ -109,10 +109,10 @@ dev.off()
 
 # same scatter plot of theta and eta parameters for different hierarchical levels
 pdf(file='fit_plots_man/theta_scatter_man2.pdf')
-par(mar=c(4,5,4,4))
+par(mar=c(4,5.5,4,4))
 plot(fit_man2$theta,fit_man2$eta,
      main='Period 2',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-     xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels)
+     xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8)
 abline(lm(fit_man2$eta~fit_man2$theta),lty=2)
 dev.off()
 
@@ -134,22 +134,32 @@ dev.off()
 n_train <- 10:23
 
 # reduced model fits
-fit_man_reduce <- fit_man_simple <- fit_man_edge <- list()
+fit_man_reduce <- fit_man_simple <- fit_man_edge <- fit_man_edgemod <- list()
 length(fit_man_reduce) <- length(fit_man_simple) <- length(fit_man_edge) <- length(n_train)
 for(i in 1:length(n_train)){
   fit_man_reduce[[i]] <- estim_transitivity(X_man2[,,1:n_train[i]],verbose=TRUE)
   fit_man_simple[[i]] <- simple_ar_fit(X_man2[,,1:n_train[i]])
   fit_man_edge[[i]] <- edge_ar_fit(X_man2[,,1:n_train[i]])
+  fit_man_edgemod[[i]] <- edge_ar_fit_modified(X_man2[,,1:n_train[i]])
 }
+
+# temp
+fit_man_edgemod <- list()
+for(i in 1:length(n_train)){
+  fit_man_edgemod[[i]] <- edge_ar_fit_modified(X_man2[,,1:n_train[i]])
+}
+
 # save reduced model fits
 saveRDS(fit_man_reduce,file='data/fit_man2_reduce.rds')
 saveRDS(fit_man_simple,file='data/fit_man2_simple.rds')
 saveRDS(fit_man_edge,file='data/fit_man2_edgewise.rds')
+saveRDS(fit_man_edgemod,file='data/fit_man2_edgewise_modified.rds')
 
 # load reduced model fits
 fit_man_reduce <- readRDS(file='data/fit_man2_reduce.rds')
 fit_man_simple <- readRDS(file='data/fit_man2_simple.rds')
 fit_man_edge <- readRDS(file='data/fit_man2_edgewise.rds')
+fit_man_edgemod <- readRDS(file='data/fit_man2_edgewise_modified.rds')
 
 # predict and plot ROCs
 response_combined <- list(NULL,NULL,NULL)
@@ -170,7 +180,8 @@ for(i in 1:length(n_train)){
   # simple AR probabilities
   pred_simple <- simple_ar_predict(3,fit_man_simple[[i]],X_man2[,,n_train[i]])
   # edgewise AR probabilities
-  pred_edgear <- edge_ar_predict(3,fit_man_edge[[i]],X_man2[,,n_train[i]])
+  #pred_edgear <- edge_ar_predict(3,fit_man_edge[[i]],X_man2[,,n_train[i]])
+  pred_edgear <- edge_ar_predict(3,fit_man_edgemod[[i]],X_man2[,,n_train[i]])
   for(n_out in 1:3){
     # store response
     response_combined[[n_out]] <- c(response_combined[[n_out]],ut(X_man2[,,n_train[i]+n_out]))
@@ -197,7 +208,8 @@ for(n_out in 1:3){
     par(mfrow=c(1,1))
     temp <- roc(response=response_combined[[n_out]],predictor=pred_degree_combined[[n_out]])
     plot(temp,col=cbp[3],
-         main=TeX(paste0('ROC, $n_{{step}}=',n_out,'$')))
+         main=TeX(paste0('ROC, $n_{{step}}=',n_out,'$')),
+         cex.lab=1.5,cex.main=1.5)
     # ROC for model-based prediction
     temp2 <- roc(response=response_combined[[n_out]],predictor=pred_model_combined[[n_out]])
     plot(temp2,col=cbp[2],add=TRUE)
@@ -217,8 +229,8 @@ for(n_out in 1:3){
     points(1-fpr,tpr,col=cbp[1],pch=15,cex=1.2)
     # legend
     if(n_out==1){
-    legend(x=.75,y=.2,ncol=2,cex=.7,lwd=2,
-           legend=c('AR model','Global AR model','Edgewise AR model', 'Degree mean model','Edgewise mean model','Previous edge'),
+    legend(x=.585,y=.42,ncol=1,cex=1.2,lwd=2,
+           legend=c('Transitivity model','Global AR model','Edgewise AR model', 'Degree mean model','Edgewise mean model','Previous edge'),
            lty=c(1,1,1,1,1,NA),pch=c(NA,NA,NA,NA,NA,15),col=cbp[c(2,4,6,3,7,1)])
     }
     dev.off()

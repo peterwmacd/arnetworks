@@ -26,7 +26,8 @@ input for \code{gij}.}
 A \eqn{p \times p} matrix, the predicted edge probabilites for the next network snapshot.
 }
 \description{
-This function predicts the edge probabilities of the next snapshot of a network
+This function predicts the edge probabilities of the next snapshot of a sequence of
+dynamic networks based on a model
 fit using \code{estNet}.
 }
 \examples{

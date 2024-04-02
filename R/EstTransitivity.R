@@ -194,9 +194,15 @@ estTransitivity <- function(X,U=NULL,V=NULL,
   #       '\nCurrent eta quartiles:',stats::quantile(etaE),'\n')
   # }
 
+  # initialize all xis, etas as 1
+  xiME <- matrix(1,p,p)
+  etaME <- matrix(1,p,p)
+  xiE <- rep(1,p)
+  etaE <- rep(1,p)
+
   tmp0 = stats::optim(c(tol,tol), globalMLE_ab_et, gr = grr_globalMLE_ab_et, method = "L-BFGS-B",
                       lower = c(0,0), upper=rep(ab_max,2),
-                      A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = Uc, V = Vc, thetavec = rep(1,p), etavec = rep(1,p))
+                      A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = Uc, V = Vc, thetavec = xiE, etavec = etaE)
   ab1 = tmp0$par
   fn1 = tmp0$value
   # if(verbose){

@@ -1,7 +1,7 @@
 #' Prediction for general autoregressive network models
 #'
 #' This function predicts the edge probabilities of the next snapshot of a sequence of
-#' dynamic networks based on a model fit using
+#' dynamic networks based on a model
 #' fit using \code{estNet}.
 #'
 #' @param estimates A list of parameter estimates from \code{estNet}.
@@ -18,7 +18,7 @@
 #'
 #' @examples
 #' # Example with transitivity model.
-#' p = 50; n = 100
+#' p = 30; n = 20
 #' xi = rep(0.7, p); eta = rep(0.8, p)
 #' a = 30; b = 15
 #'
@@ -54,68 +54,137 @@
 predictNet <- function(estimates,
                        Xnew,statsAlphaNew,statsBetaNew,
                        fij,gij){
+  # check
+  if(!all(names(estimates)==c('gAlphaVal','gBetaVal','xi','eta'))){
+    stop('estimate names do not match estNet output')
+  }
   # calculate alphas for next snapshot
   Alpha <- tcrossprod(estimates$xi)*fij(estimates$gAlphaVal,statsAlphaNew)[,,1]
   # calculate betas for next snapshot
   Beta <- tcrossprod(estimates$eta)*gij(estimates$gBetaVal,statsBetaNew)[,,1]
   # calculate probability of next edge
   Pred <- Alpha + Xnew*(1 - Alpha - Beta)
-  Pred <- Pred - diag(Pred)
+  Pred <- Pred - diag(diag(Pred))
   return(Pred)
 }
 
-# prediction function for transitivity
+#' Prediction for autoregressive network models with transitivity
+#'
+#' This function recursively predicts the edge probabilities of future snapshots of a sequence of
+#' dynamic networks based on a model
+#' fit using \code{estTransitivity}.
+#'
+#'
+#' @param estimates A list of parameter estimates from \code{estTransitivity}.
+#' @param Xnew A \eqn{p \times p} matrix of the network's current adjacency matrix from which to
+#' perform prediction
+#' @param Unew A \eqn{p \times p \times 1} array or \eqn{p \times p } matrix of the normalized number of
+#' common neighbour statistics for the current snapshot. If not provided, it will be calculated internally from \code{Xnew}.
+#' @param Vnew A \eqn{p \times p \times 1} array or \eqn{p \times p } matrix of the normalized number of
+#' disjoint neighbour statistics for the current snapshot. If not provided, it will be calculated internally from \code{Xnew}.
+#' @param nStep A positive integer, the number of steps to recursively predict with the model.
+#'
+#' @return A \eqn{p \times p} matrix (if \code{nStep=1}) or a \eqn{p \times p \times} \code{nStep} array,
+#' the predicted edge probabilites for the next \code{nStep} network snapshots.
+#'
+#' @examples
+#' p = 30; n = 20
+#' xi = rep(0.7, p); eta = rep(0.8, p)
+#' a = 30; b = 15
+#'
+#' # Simulate data using simulate_transitivity function
+#' simulated_data = simulate_transitivity(p, n, xi, eta, a, b)
+#' X = simulated_data$X
+#' U = simulated_data$U
+#' V = simulated_data$V
+#'
+#' # Fit model using estTransitivity function
+#' result = estTransitivity(X, U, V)
+#'
+#' # Predict the next 2 snapshots using predictTransitivity
+#' pred = predictTransitivity(result,X[,,n],nStep=2)
+#'
+#' @export
 predictTransitivity <- function(estimates,
                                 Xnew,
                                 Unew=NULL,Vnew=NULL,
-                                n_step=1){
+                                nStep=1){
   # dimensions
-  p <- dim(X_prev)[1]
+  p <- dim(Xnew)[1]
+  if(nStep < 1){
+    stop('nStep must be a positive integer')
+  }
   # initialize current observation
   Xcurr <- Xnew
-
-  ##### to do from here
-  # populate current U/V statistics
-  U <- V <- matrix(0,p,p)
-  # populate U,V
-  for(i in 1:(p-1)){
-    for(j in (i+1):p){
-      tmp <- U[i,j] <- U[j,i] <- sum(X_curr[i,]*X_curr[j,])/(p-1)
-      V[i,j] <- V[j,i] <- (sum(X_curr[i,]+X_curr[j,])-2*X_curr[i,j])/(p-1) - 2*tmp
-    }
-  }
-  stats_curr <- list(U=U,V=V)
-  # theta/eta degree parameters
-  Ttheta <- tcrossprod(fit$theta)
-  Eeta <- tcrossprod(fit$eta)
-  # initialize array
-  X_out <- array(NA,c(p,p,n_out))
-  for(t in 1:n_out){
-    # predict
-    eaU <- exp(fit$a * stats_curr$U)
-    ebV <- exp(fit$b * stats_curr$V)
-    alpha <- (Ttheta * eaU) / (1 + eaU + ebV)
-    beta <- (Eeta * ebV) / (1 + eaU + ebV)
-    X_out[,,t] <- alpha + X_curr*(1 - alpha - beta)
-    if(t < n_out){
-      # update X
-      X_curr <- X_out[,,t]
-      # update U,V
-      U <- V <- matrix(0,p,p)
-      # populate U,V
-      for(i in 1:(p-1)){
-        for(j in (i+1):p){
-          tmp <- U[i,j] <- U[j,i] <- sum(X_curr[i,]*X_curr[j,])/(p-1)
-          V[i,j] <- V[j,i] <- (sum(X_curr[i,]+X_curr[j,])-2*X_curr[i,j])/(p-1) - 2*tmp
-        }
-      }
-      stats_curr <- list(U=U,V=V)
-    }
-  }
-  if(n_out==1){
-    return(X_out[,,1])
+  # initialize statistics
+  if(is.null(Unew)){
+    statsCurr <- statsTransitivity(array(Xnew,c(p,p,1)))
+    # likelihood uses clipped U without the final snapshot
+    Ucurr <- statsCurr$U[,,1]
   }
   else{
-    return(X_out)
+    if(all(dim(Unew)==c(p,p,1))){
+      Ucurr <- Unew[,,1]
+    }
+    else if(all(dim(U)==c(p,p))){
+      Ucurr <- Unew
+    }
+    else{
+      stop('Incorrect dimensions for U')
+    }
+  }
+  # V: uncommon neighbours
+  if(is.null(Vnew)){
+    if(is.null(statsCurr)){
+      statsCurr <- statsTransitivity(array(Xnew,c(p,p,1)))
+    }
+    # likelihood uses clipped U without the final snapshot
+    Vcurr <- statsCurr$V[,,1]
+  }
+  else{
+    if(all(dim(Vnew)==c(p,p,1))){
+      Vcurr <- Vnew[,,1]
+    }
+    else if(all(dim(Vnew)==c(p,p))){
+      Vcurr <- Vnew
+    }
+    else{
+      stop('Incorrect dimensions for V')
+    }
+  }
+  # populate current U/V statistics
+  # parameters
+  # check
+  if(!all(names(estimates)==c('gVal','xi','eta'))){
+    stop('estimate names do not match estTransitivity output')
+  }
+  xiM <- tcrossprod(estimates$xi)
+  etaM <- tcrossprod(estimates$eta)
+  a <- estimates$gVal[1]
+  b <- estimates$gVal[2]
+  # initialize array
+  Pred <- array(NA,c(p,p,nStep))
+  for(tt in 1:nStep){
+    # predict
+    eaU <- exp(a * Ucurr)
+    ebV <- exp(b * Vcurr)
+    Alpha <- (xiM * eaU) / (1 + eaU + ebV)
+    Beta <- (etaM * ebV) / (1 + eaU + ebV)
+    Pred[,,tt] <- Alpha + Xcurr*(1 - Alpha - Beta)
+    Pred[,,tt] <- Pred[,,tt] - diag(diag(Pred[,,tt]))
+    if(tt < nStep){
+      # update X
+      Xcurr <- Pred[,,tt]
+      # update U,V
+      statsCurr <- statsTransitivity(Pred[,,tt,drop=FALSE])
+      Ucurr <- statsCurr$U[,,1]
+      Vcurr <- statsCurr$V[,,1]
+    }
+  }
+  if(nStep==1){
+    return(Pred[,,1])
+  }
+  else{
+    return(Pred)
   }
 }

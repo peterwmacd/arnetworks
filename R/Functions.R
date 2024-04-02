@@ -1041,6 +1041,21 @@ edge_ar_fit <- function(X){
   return(list(A=alpha_hat,B=beta_hat))
 }
 
+edge_ar_fit_modified <- function(X){
+  n <- dim(X)[3]
+  p <- dim(X)[1]
+  # estimate flip on
+  a1 <- apply(X[,,-1]*(1-X[,,-n]),c(1,2),sum)
+  a2 <- apply(1-X[,,-n],c(1,2),sum)
+  alpha_hat <- a1/a2
+  alpha_hat[is.nan(alpha_hat)] <- 1
+  # estimate flip off based on overall proportion
+  pi_hat <- apply(X,c(1,2),mean)
+  beta_hat <- alpha_hat*(1/pi_hat - 1)
+  beta_hat[is.nan(beta_hat)] <- 1
+  return(list(A=alpha_hat,B=beta_hat))
+}
+
 edge_ar_predict <- function(n_out,fit,X_prev){
   # dimensions
   p <- dim(X_prev)[1]
