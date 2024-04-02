@@ -1,143 +1,256 @@
-simuM = function(p, n, theta, eta,  a1=2, b1=2, a2=2, b2=2, initial = NA ) {
-  # p: No. of nodes
-  # n: No. of observed networks
-  # a: coefficient of No. of common friends
-  # b: coefficient of No. of non-(common friends) 
-  
-  #install.packages("Matrix")
-  #library(Matrix)
-  
-  X = array(rep(0, p*p*n), c(p,p,n)) #  pxp adjacent matrix sequence of length n
-  U = V =  array(0,dim = c(p,p,n-1))
-  U_full = V_full =  array(0,dim = c(p,p,n))
-  D = matrix(rep(0, n*p), nrow=n)  # Node degress
-  
-  ThetaM=theta%*%t(theta)
-  EtaM=eta%*%t(eta)
-  
-  
-  # Set initial adjacent matrix X[1,,] with the first 3 nodes as Harbour nodes
-  zeroOne=c(0,1); zeroOne=as.vector(zeroOne)
-  if (is.na(initial)){
-    for(i in 1:(p-1)) for(j in (i+1):p){ 
-      pb=ThetaM[i,j]/(EtaM[i,j]+ThetaM[i,j])
-      X[i,j,1]=sample(zeroOne, 1, prob=c(1-pb, pb)); X[j,i,1]=X[i,j,1]}
-    for(i in 1:p) D[1,i] = sum(X[i,,1])/(p-1) # Node degrees at time t=1
-  }else{
-    for(i in 1:(p-1)) for(j in (i+1):p){ 
-      pb=initial
-      X[i,j,1]=sample(zeroOne, 1, prob=c(1-pb, pb)); X[j,i,1]=X[i,j,1]}
-    for(i in 1:p) D[1,i] = sum(X[i,,1])/(p-1) # Node degrees at time t=1
+#' Simulate a Transitivity Model
+#'
+#' Simulates the evolution of a network based on a transitivity model. This model
+#' incorporates specified local and global parameters to influence the dynamics of network
+#' connections over time, utilizing a burn-in period to achieve stationarity.
+#'
+#' The model's evolution is characterized by two key equations that govern the probability
+#' of edge formation and dissolution between nodes, based on the numbers of common and uncommon friends:
+#' \deqn{\alpha_{i,j}^{t-1} = \xi_i\xi_j \frac{\exp(a U_{i,j}^{t-1})}{1 + \exp(a U_{i,j}^{t-1}) + \exp(b V_{i,j}^{t-1})},}
+#' \deqn{\beta_{i,j}^{t-1} = \eta_i\eta_j \frac{\exp(b V_{i,j}^{t-1})}{1 + \exp(a U_{i,j}^{t-1}) + \exp(b V_{i,j}^{t-1})},}
+#' where \eqn{U_{i,j}^{t-1} = \sum_{k \neq i,j} X_{i,k}^{t-1}X_{j,k}^{t-1}/(p-2)} and \eqn{V_{i,j}^{t-1} = \sum_{k \neq i,j} [X_{i,k}^{t-1}(1-X_{j,k}^{t-1}) + (1-X_{i,k}^{t-1})X_{j,k}^{t-1}]/(p-2)}  denote the normalized counts of common and uncommon friends between nodes \eqn{i} and \eqn{j} at time \eqn{t-1}, respectively.
+#'
+#' @param p Integer, number of nodes.
+#' @param n Integer, number of observations, excluding the burn-in period.
+#' @param xi Numeric vector of length \eqn{p}, representing local parameter values that influence \eqn{\alpha_{i,j}^{t-1}}.
+#' @param eta Numeric vector of length \eqn{p}, representing local parameter values that influence \eqn{\beta_{i,j}^{t-1}}.
+#' @param a Global parameter influencing the effect of common friends \eqn{U_{i,j}^{t-1}}.
+#' @param b Global parameter influencing the effect of uncommon friends \eqn{V_{i,j}^{t-1}}.
+#' @param burn_in Integer, length of the burn-in period to ensure stationarity.
+#' @return A list with the following components:
+#'    - \code{X}: An array of the network's adjacency matrices over time (\eqn{p} x \eqn{p} x \eqn{n}), after the burn-in period.
+#'    - \code{U}: An array of normalized common friends' counts over time (\eqn{p} x \eqn{p} x \eqn{n}).
+#'    - \code{V}: An array of normalized uncommon friends' counts over time (\eqn{p} x \eqn{p} x \eqn{n}).
+#' @export
+#' @examples
+#' p = 10; n = 100
+#' xi = rep(0.7, p); eta = rep(0.8, p)
+#' a = 30; b = 15
+#' result = simulate_transitivity(p, n, xi, eta, a, b)
+simulate_transitivity <- function(p, n, xi, eta, a, b, burn_in = 200) {
+  # Initialize arrays for the network and counts of common/uncommon friends
+  X <- array(0, dim = c(p, p, n + burn_in))
+  U <- V <- array(0, dim = c(p, p, n + burn_in))
+  xiM <- xi %*% t(xi)
+  etaM <- eta %*% t(eta)
+
+  # Initialize the adjacency matrix for t = 1
+  for (i in 1:(p - 1)) {
+    for (j in (i + 1):p) {
+      pb <- xiM[i, j] / (xiM[i, j] + etaM[i, j])
+      X[i, j, 1] <- X[j, i, 1] <- sample(c(0, 1), 1, prob = c(1 - pb, pb))
+    }
   }
-  
-  
-  # Generate adjacent matrices for t=2, ... N
-  for(t in 2:n){
-    # Set transition probability matrix first, then generate X[t,,]
-    for(i in 1:(p-1)) for(j in (i+1):p){ 
-      tmp = U[i,j,t-1] = U[j,i,t-1] = sum(X[i,, t-1]*X[j,,t-1]) # No. of common friends
-      tmp1 = V[i,j,t-1] = V[j,i,t-1] = (sum(X[i,,t-1]+X[j,,t-1])-2*tmp)/2 # No. of uncommon friends
-      if(X[i,j,t-1]==0) { 
-        pb=ThetaM[i,j]*exp(a1*tmp)/(exp(a1*tmp)+exp(b1*tmp1)+1)
-        X[i,j,t]=sample(zeroOne, 1, prob=c(1-pb, pb)); X[j,i,t]=X[i,j,t]
-      } else {
-        pb=EtaM[i,j]*exp(b2*tmp1)/(1+exp(a2*tmp)+exp(b2*tmp1))	# Prob of 1 to 0
-        X[i,j,t]=sample(zeroOne, 1, prob=c(pb, 1-pb)); X[j,i,t]=X[i,j,t]
+
+  # Evolve the network from t = 2 to n + burn_in
+  for (t in 2:(n + burn_in)) {
+    for (i in 1:(p - 1)) {
+      for (j in (i + 1):p) {
+        # Common and uncommon friends calculation
+        common <- sum(X[i, , t - 1] * X[j, , t - 1]) / (p - 2)
+        uncommon <- (sum(X[i, , t - 1] + X[j, , t - 1]) - 2 * X[i, j, t - 1]) / (p - 2) - 2 * common
+
+        U[i, j, t - 1] <- U[j, i, t - 1] <- common
+        V[i, j, t - 1] <- V[j, i, t - 1] <- uncommon
+
+        # Calculate the transition probability and update network state
+        if (X[i, j, t - 1] == 0) {
+          pb_form = xiM[i, j] * exp(a * common) / (1 + exp(a * common) + exp(b * uncommon))
+          X[i, j, t] <- X[j, i, t] <- sample(c(0, 1), 1, prob = c(1 - pb_form, pb_form))
+        } else {
+          pb_dissolve = etaM[i, j] * exp(b * uncommon) / (1 + exp(a * common) + exp(b * uncommon))
+          X[i, j, t] <- X[j, i, t] <- sample(c(0, 1), 1, prob = c(pb_dissolve, 1 - pb_dissolve))
+        }
       }
     }
-    # print(X[t,,])
-    for(i in 1:p) D[t,i] = sum(X[i,,t])/(p-1) # Node degrees at time t
   }
-  
-  U_full[,,1:(n-1)] = U
-  V_full[,,1:(n-1)] = V
-  
-  U_full[i,j,n] = U_full[j,i,n] = sum(X[i,, n]*X[j,,n]) # No. of common friends
-  V_full[i,j,n] = V_full[j,i,n] = (sum(X[i,,n]+X[j,,n])-2*tmp)/2 # No. of uncommon friends
-  
-  
-  res = list()
-  res$X = X
-  res$D = D
-  res$thetaM = ThetaM
-  res$etaM = EtaM
-  res$U = U
-  res$V = V
-  res$U_full = U_full
-  res$V_full = V_full
-  
-  
-  return(res)
+
+  # Correctly update U and V for the last time step n + burn_in
+  for (i in 1:(p - 1)) {
+    for (j in (i + 1):p) {
+      common <- sum(X[i, , n + burn_in] * X[j, , n + burn_in]) / (p - 2)
+      uncommon <- (sum(X[i, , n + burn_in] + X[j, , n + burn_in]) - 2 * X[i, j, n + burn_in]) / (p - 2) - 2 * common
+
+      U[i, j, n + burn_in] <- U[j, i, n + burn_in] <- common
+      V[i, j, n + burn_in] <- V[j, i, n + burn_in] <- uncommon
+    }
+  }
+
+  # Return the network excluding the burn-in period, along with counts of common/uncommon friends
+  list(
+    X = X[, , (burn_in + 1):(n + burn_in)],
+    U = U[, , (burn_in + 1):(n + burn_in)],
+    V = V[, , (burn_in + 1):(n + burn_in)]
+  )
 }
 
 
-simuM_dd = function(p, n, theta, eta, a , b) {
-  # p: No. of nodes
-  # n: No. of observed networks
-  # a: coefficient of alpha
-  # b: coefficient of beta
-  
-  #install.packages("Matrix")
-  #library(Matrix)
-  
-  X = array(rep(0, p*p*n), c(p,p,n)) #  pxp adjacent matrix sequence of length n
-  D = matrix(rep(0, n*p), nrow=n)  # Node degrees
-  D_all = rep(0,n)
-  
-  ThetaM=theta%*%t(theta)
-  EtaM=eta%*%t(eta)
-  
-   
-  
-  # Set initial adjacent matrix X[1,,] with the first 3 nodes as Harbour nodes
-  zeroOne=c(0,1); zeroOne=as.vector(zeroOne)
-  for(i in 1:(p-1)) for(j in (i+1):p){ 
-    pb=ThetaM[i,j]/(EtaM[i,j]+ThetaM[i,j])
-    X[i,j,1]=sample(zeroOne, 1, prob=c(1-pb, pb)); X[j,i,1]=X[i,j,1]}
-  for(i in 1:p) D[1,i] = sum(X[i,,1]) # Node degrees at time t=1
-  D_all[1] = sum(D[1,])/2 
-  
-  # Generate adjacent matrices for t=2, ... N
-  for(t in 2:n){
-    # Set transition probability matrix first, then generate X[t,,]
-    for(i in 1:(p-1)) for(j in (i+1):p){ 
-      tmp = a[1]* D_all[t-1] +a[2]*D[t-1,i] +a[3]*D[t-1,j]
-      tmp1 = b[1]*( p*(p-1)/2 - D_all[t-1]) +b[2]*(p - 1 - D[t-1,i]) +b[3]*(p - 1 - D[t-1,j])
-      if(X[i,j,t-1]==0) { 
-        if (is.infinite(exp(tmp))){
-          pb = 1
-        }else{
-          pb=ThetaM[i,j]* exp(tmp)/(1+exp(tmp))
+#' Simulate a Density-Dependent Network Model
+#'
+#' Simulates the evolution of a network based on a density-dependent model. This model
+#' incorporates specified local and global parameters to influence the dynamics of network
+#' connections over time, utilizing a burn-in period to achieve stationarity.
+#'
+#' The model's evolution is characterized by two key equations that govern the probability
+#' of edge formation and dissolution between nodes, based on the network's density metrics:
+#' \deqn{\alpha_{i,j}^{t-1} = \xi_i\xi_j \frac{\exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\}}{1 + \exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\} + \exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}},}
+#' \deqn{\beta_{i,j}^{t-1} = \eta_i\eta_j \frac{\exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}}{1 + \exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\} + \exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}},}
+#' where \eqn{D_{-i,-j}^{t-1}} represents the network density excluding nodes \eqn{i} and \eqn{j}, and \eqn{D_i^{t-1}} denotes the density of node \eqn{i} at time \eqn{t-1}, respectively.
+#'
+#' @param p Integer, specifying the number of nodes in the network.
+#' @param n Integer, indicating the number of observations to simulate, excluding the burn-in period.
+#' @param xi Numeric vector of length \eqn{p}, representing local parameter values that influence \eqn{\alpha_{i,j}^{t-1}}.
+#' @param eta Numeric vector of length \eqn{p}, representing local parameter values that influence \eqn{\beta_{i,j}^{t-1}}.
+#' @param a Numeric vector \eqn{[a_0, a_1]}, global parameters.
+#' @param b Numeric vector \eqn{[b_0, b_1]}, global parameters.
+#' @param burn_in Integer, the length of the burn-in period for achieving stationarity.
+#' @return A list containing:
+#'    - \code{X}: An array of the network's adjacency matrices over time (\eqn{p} x \eqn{p} x \eqn{n}), after the burn-in period.
+#'    - \code{D}: A matrix of individual node densities over time (\eqn{p} x \eqn{n}).
+#'    - \code{Dcij}: An array of network densities excluding specific node pairs (\eqn{i, j}) over time (\eqn{p} x \eqn{p} x \eqn{n}), for probability calculations.
+#' @examples
+#' p = 10; n = 100
+#' xi = runif(p, 0.5, 0.9)
+#' eta = runif(p, 0.5, 0.9)
+#' a = c(0.5, 0.5)
+#' b = c(0.3, 0.3)
+#' result = simulate_density(p, n, xi, eta, a, b)
+#' @export
+
+
+simulate_density <- function(p, n, xi, eta, a, b, burn_in = 200) {
+  X <- array(0, dim = c(p, p, n + burn_in))  # Network adjacency matrices
+  D <- matrix(0, nrow = p, ncol = n + burn_in)  # Node degree/density matrix
+  Dcij <- array(0, dim = c(p, p, n + burn_in))  # Density excluding nodes i, j
+
+  xiM <- xi %*% t(xi)  # Local parameter matrix for xi
+  etaM <- eta %*% t(eta)  # Local parameter matrix for eta
+
+  for (t in 1:(n + burn_in)) {
+    if (t == 1) {
+      for (i in 1:(p-1)) {
+        for (j in (i+1):p) {
+          pb <- xiM[i,j] / (xiM[i,j] + etaM[i,j])
+          X[i,j,t] <- X[j,i,t] <- sample(c(0, 1), 1, prob = c(1 - pb, pb))
         }
-        X[i,j,t]=sample(zeroOne, 1, prob=c(1-pb, pb)); X[j,i,t]=X[i,j,t]
-      } else {
-        if (is.infinite(exp(tmp1))){
-          pb = 1
-        }else{
-          pb= EtaM[i,j]*exp(tmp1)/(1+exp(tmp1))
+      }
+    } else {
+      # Update densities D and Dcij for time t-1
+      for (i in 1:p) {
+        D[i, t-1] <- sum(X[i,,t-1]) / (p - 1)
+      }
+      for (i in 1:(p-1)) {
+        for (j in (i+1):p) {
+          # Update excluding i, j
+          excluded_indices <- setdiff(1:p, c(i, j))
+          Dcij[i,j,t-1] <- sum(X[excluded_indices, excluded_indices, t-1]) / ((p-2)*(p-3))
+
+          # Calculate alpha and beta terms
+          alpha_term <- exp(a[1] * Dcij[i,j,t-1] + a[2] * (D[i,t-1] + D[j,t-1]))
+          beta_term <- exp(b[1] * (1 - Dcij[i,j,t-1]) + b[2] * (2 - D[i,t-1] - D[j,t-1]))
+
+          # Transition probabilities
+          if (X[i,j,t-1] == 0) {
+            pb_form = xiM[i, j] * alpha_term / (1 + alpha_term + beta_term)
+            X[i, j, t] <- X[j, i, t] <- sample(c(0, 1), 1, prob = c(1 - pb_form, pb_form))
+          } else {
+            pb_dissolve = etaM[i, j] * beta_term / (1 + alpha_term + beta_term)
+            X[i, j, t] <- X[j, i, t] <- sample(c(0, 1), 1, prob = c(pb_dissolve, 1 - pb_dissolve))
+          }
         }
-        	# Prob of 1 to 0
-        X[i,j,t]=sample(zeroOne, 1, prob=c(pb, 1-pb)); X[j,i,t]=X[i,j,t]
       }
     }
-    # print(X[t,,])
-    for(i in 1:p) D[t,i] = sum(X[i,,t]) # Node degrees at time t
-    D_all[t] = sum(D[t,])/2
   }
-  
 
-  
-  
-  res = list()
-  res$X = X
-  res$D = D
-  
-  
-  return(res)
+  # Final update for D and Dcij at the end of the simulation
+  for (i in 1:p) {
+    D[i, n + burn_in] <- sum(X[i,,n + burn_in]) / (p - 1)
+  }
+  for (i in 1:(p-1)) {
+    for (j in (i+1):p) {
+      excluded_indices <- setdiff(1:p, c(i, j))
+      Dcij[i,j,n + burn_in] <- sum(X[excluded_indices, excluded_indices, n + burn_in]) / ((p-2)*(p-3))
+    }
+  }
+
+  list(X = X[,,(burn_in + 1):(n + burn_in)],
+       D = D[, (burn_in + 1):(n + burn_in)],
+       Dcij = Dcij[,,(burn_in + 1):(n + burn_in)])
 }
 
 
+#' Simulate a Persistence Model
+#'
+#' Simulates the evolution of a network based on a persistence model. This model
+#' incorporates specified local and global parameters to influence the dynamics of network
+#' connections over time, utilizing a burn-in period to achieve stationarity.
+#'
+#' The model's evolution is characterized by two key equations that govern the probability
+#' of edge formation and dissolution between nodes, based on previous states of the network:
+#' \deqn{\alpha_{i,j}^{t-1} = \xi_i \xi_j \exp\left( - 1 - a \left[ (1 - X_{i,j}^{t-2}) +
+#' (1 - X_{i,j}^{t-2})(1 - X_{i,j}^{t-3}) \right] \right),}
+#' \deqn{\beta_{i,j}^{t-1} = \eta_i \eta_j \exp\left( - 1 - b \left[ X_{i,j}^{t-2} +
+#' X_{i,j}^{t-2} X_{i,j}^{t-3} \right] \right),}
+#' where \eqn{\alpha_{i,j}^{t-1}} and \eqn{\beta_{i,j}^{t-1}} represent the probabilities
+#' of edge formation and dissolution, respectively, modulated by the interaction of
+#' nodes \eqn{i} and \eqn{j} in previous timesteps.
+#'
+#' @param p Integer, specifying the number of nodes in the network.
+#' @param n Integer, indicating the number of observations to simulate, excluding the burn-in period.
+#' @param xi Numeric vector of length \eqn{p}, representing local parameter values that influence \eqn{\alpha_{i,j}^{t-1}}.
+#' @param eta Numeric vector of length \eqn{p}, representing local parameter values that influence \eqn{\beta_{i,j}^{t-1}}.
+#' @param a Global parameter that influence \eqn{\alpha_{i,j}^{t-1}}.
+#' @param b Global parameter that influence \eqn{\beta_{i,j}^{t-1}}.
+#' @param burn_in Integer, the length of the burn-in period for achieving stationarity.
+#' @return A list containing:
+#'    - \code{X}: An array of the network's adjacency matrices over time (\eqn{p} x \eqn{p} x \eqn{n}), after the burn-in period.
+#' @examples
+#' p = 10; n = 100
+#' xi = runif(p, 0.5, 0.9)
+#' eta = runif(p, 0.5, 0.9)
+#' a = 0.5
+#' b = 0.5
+#' result = simulate_persistence(p, n, xi, eta, a, b)
+#' @export
 
+simulate_persistence = function(p, n, xi, eta, a , b, burn_in = 200) {
+  X <- array(0, dim = c(p, p, n + burn_in))
+
+  # Precompute local parameter matrices for efficiency
+  xiM <- outer(xi, xi)
+  etaM <- outer(eta, eta)
+
+  for(t in 1:3){
+    for (i in 1:(p - 1)) {
+      for (j in (i + 1):p) {
+        pb <- xiM[i, j] / (xiM[i, j] + etaM[i, j])
+        X[i, j, t] <- X[j, i, t] <- sample(c(0, 1), 1, prob = c(1 - pb, pb))
+      }
+    }
+  }
+
+
+  # Generate adjacent matrices for t=2, ... N
+  for (t in 4:(n+burn_in)) {
+    for (i in 1:(p-1)) {
+      for (j in (i+1):p) {
+        tmp <- -1 - a * ((1 - X[i, j, t - 2]) + (1 - X[i, j, t - 2]) * (1 - X[i, j, t - 3]))
+        tmp1 <- -1 - b * (X[i, j, t - 2] + X[i, j, t - 2] * X[i, j, t - 3])
+
+        # Transition probabilities
+        if (X[i,j,t-1] == 0) {
+          pb_form = xiM[i, j] * exp(tmp)
+          X[i, j, t] <- X[j, i, t] <- sample(c(0, 1), 1, prob = c(1 - pb_form, pb_form))
+        } else {
+          pb_dissolve = etaM[i, j] * exp(tmp1)
+          X[i, j, t] <- X[j, i, t] <- sample(c(0, 1), 1, prob = c(pb_dissolve, 1 - pb_dissolve))
+        }
+      }
+    }
+  }
+  # Return the network states excluding the burn-in period
+  list(X = X[, , (burn_in + 1):(n + burn_in)])
+}
 
 
 

@@ -126,7 +126,7 @@ predictTransitivity <- function(estimates,
     if(all(dim(Unew)==c(p,p,1))){
       Ucurr <- Unew[,,1]
     }
-    else if(all(dim(U)==c(p,p))){
+    else if(all(dim(Unew)==c(p,p))){
       Ucurr <- Unew
     }
     else{

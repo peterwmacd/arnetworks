@@ -1,10 +1,13 @@
 # load data
 setwd('~/packages/arnetworks/real_data/')
-# load package
+# load packages
 library(devtools)
 library(pROC)
 library(latex2exp)
-load_all()
+# source code
+# load_all()
+source('Functions.R')
+source('Estim.R')
 
 # colorblind palete
 cbp <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
@@ -45,7 +48,7 @@ hist(fit_sfhh$eta,20,
      xlab='',col=cbp[7],xlim=c(.8,1.4),cex.main=1.8,cex.lab=1.3)
 abline(v=mean(fit_sfhh$eta),lty=2)
 dev.off()
-# larger, less dispersed, mean around 1.075
+# larger, less dispersed, mean around 1.08
 
 # xy plot of fitted thetas and etas
 pdf(file='fit_plots_sfhh/theta_scatter_sfhh.pdf')

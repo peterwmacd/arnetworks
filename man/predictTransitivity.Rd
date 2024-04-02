@@ -7,7 +7,7 @@
 predictTransitivity(estimates, Xnew, Unew = NULL, Vnew = NULL, nStep = 1)
 }
 \arguments{
-\item{estimates}{A list of parameter estimates from \code{estNet}.}
+\item{estimates}{A list of parameter estimates from \code{estTransitivity}.}
 
 \item{Xnew}{A \eqn{p \times p} matrix of the network's current adjacency matrix from which to
 perform prediction}
@@ -18,7 +18,7 @@ common neighbour statistics for the current snapshot. If not provided, it will b
 \item{Vnew}{A \eqn{p \times p \times 1} array or \eqn{p \times p } matrix of the normalized number of
 disjoint neighbour statistics for the current snapshot. If not provided, it will be calculated internally from \code{Xnew}.}
 
-\item{nStep}{An integer at least 1, the number of steps to recursively predict with the model.}
+\item{nStep}{A positive integer, the number of steps to recursively predict with the model.}
 }
 \value{
 A \eqn{p \times p} matrix (if \code{nStep=1}) or a \eqn{p \times p \times} \code{nStep} array,

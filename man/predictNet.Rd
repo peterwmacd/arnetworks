@@ -32,7 +32,7 @@ fit using \code{estNet}.
 }
 \examples{
 # Example with transitivity model.
-p = 50; n = 100
+p = 30; n = 20
 xi = rep(0.7, p); eta = rep(0.8, p)
 a = 30; b = 15
 

@@ -4,7 +4,10 @@ setwd('~/packages/arnetworks/real_data/')
 library(devtools)
 library(pROC)
 library(latex2exp)
-load_all()
+# source code
+# load_all()
+source('Functions.R')
+source('Estim.R')
 
 # manufacturing network
 X_man <- readRDS('data/X_man.rds')
@@ -26,8 +29,10 @@ n1 <- dim(X_man1)[3]
 UV_man1 <- transitivity_stats(X_man1)
 
 fit_man1 <- estim_transitivity(X_man1,verbose=TRUE)
-# compare to
-fit_man1A <- estTransitivity(X_man1,verbose=TRUE)
+
+# compare to package version
+#fit_man1A <- estTransitivity(X_man1,verbose=TRUE)
+
 # save fitted model
 saveRDS(fit_man1,file='data/fit_man1.rds')
 
@@ -144,10 +149,10 @@ for(i in 1:length(n_train)){
 }
 
 # temp
-fit_man_edgemod <- list()
-for(i in 1:length(n_train)){
-  fit_man_edgemod[[i]] <- edge_ar_fit_modified(X_man2[,,1:n_train[i]])
-}
+# fit_man_edgemod <- list()
+# for(i in 1:length(n_train)){
+#   fit_man_edgemod[[i]] <- edge_ar_fit_modified(X_man2[,,1:n_train[i]])
+# }
 
 # save reduced model fits
 saveRDS(fit_man_reduce,file='data/fit_man2_reduce.rds')
