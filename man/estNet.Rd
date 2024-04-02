@@ -91,12 +91,12 @@ or when the global log-likelihood decreases, signaling optimal estimates.
 }
 \examples{
 # Example 1: transitivity model.
-p = 50; n = 100
+p = 30; n = 20
 xi = rep(0.7, p); eta = rep(0.8, p)
 a = 30; b = 15
 
-# Simulate data using simulate_transitivity function
-simulated_data = simulate_transitivity(p, n, xi, eta, a, b)
+# Simulate data using simulateTransitivity function
+simulated_data = simulateTransitivity(p, n, xi, eta, a, b)
 X = simulated_data$X
 U = simulated_data$U[, , 1:(n - 1)]
 V = simulated_data$V[, , 1:(n - 1)]
@@ -117,21 +117,19 @@ gij = function(global, stats) {
 }
 
 result = estNet(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta,
-                shrGPrm = 2, updateMethod = "sequential")
-print(result)
+                shrGPrm = 2, updateMethod = "sequential", maxIter=2)
 
 result = estNet(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta,
-                shrGPrm = 2, updateMethod = "batch")
-print(result)
-
+                shrGPrm = 2, updateMethod = "batch", maxIter=2)
+# NOTE: small maxIter used to limit example runtime, default value is 100
 
 # Example 2: persistence model.
-p = 50; n = 100
+p = 30; n = 20
 xi = runif(p,0.5,0.9); eta = runif(p,0.5,0.9)
 a = 0.5; b = 0.5
 
-# Simulate data using simulate_persistence function
-simulated_data = simulate_persistence(p, n, xi, eta, a, b)
+# Simulate data using simulatePersistence function
+simulated_data = simulatePersistence(p, n, xi, eta, a, b)
 X = simulated_data$X
 statsAlpha =  1-X[,,4:n-2]+ ( 1-X[,,4:n-2])*( 1-X[,,4:n-3])
 statsBeta =  X[,,4:n-2]+ ( X[,,4:n-2])*( X[,,4:n-3])
@@ -148,8 +146,8 @@ gij <- function(global, stats) {
   return (exp(-1 -global*stats))
 }
 
-result <- estNet(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta, shrGPrm = 0)
-print(result)
-
+result <- estNet(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta,
+                 shrGPrm = 0, maxIter = 2)
+# NOTE: small maxIter used to speed example runtime, default value is 100
 
 }

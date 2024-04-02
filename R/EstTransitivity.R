@@ -19,8 +19,8 @@
 #' xi = rep(0.7, p); eta = rep(0.8, p)
 #' a = 30; b = 15
 #'
-#' # Simulate data using simulate_transitivity function
-#' simulated_data = simulate_transitivity(p, n, xi, eta, a, b)
+#' # Simulate data using simulateTransitivity function
+#' simulated_data = simulateTransitivity(p, n, xi, eta, a, b)
 #' X = simulated_data$X
 #'
 #' # Calculate transitivity statistics
@@ -95,7 +95,7 @@ statsTransitivity <- function(X){
 #' to \code{c(0.5,0.1)}. Note that \code{rSeqGlob} and \code{rSeqLoc} must have the same length.
 #' @param rSeqLoc The sequence of control parameters for the refinement of local parameters. Defaults
 #' to \code{c(0.5,0.1)}.
-#' @param verbose An indicator, if \code{TRUE} there will be printed console output providing optimization
+#' @param verbose An indicator, if \code{TRUE} there will be console output providing optimization
 #' progress. defaults to \code{FALSE}.
 #'
 #' @return A list containing the estimated parameters:
@@ -106,17 +106,18 @@ statsTransitivity <- function(X){
 #' }
 #'
 #' @examples
-#' p = 30; n = 20
+#' p = 30; n = 10
 #' xi = rep(0.7, p); eta = rep(0.8, p)
 #' a = 30; b = 15
 #'
-#' # Simulate data using simulate_transitivity function
-#' simulated_data = simulate_transitivity(p, n, xi, eta, a, b)
+#' # Simulate data using simulateTransitivity function
+#' simulated_data = simulateTransitivity(p, n, xi, eta, a, b)
 #' X = simulated_data$X
 #' U = simulated_data$U
 #' V = simulated_data$V
 #'
-#' result = estTransitivity(X, U, V)
+#' result = estTransitivity(X, U, V, rSeqGlob=0.5, rSeqLoc=0.5)
+#' # NOTE: short rSeq's used to limit example runtime, default has length 2
 #'
 #' @export
 estTransitivity <- function(X,U=NULL,V=NULL,

@@ -28,8 +28,8 @@ p = 30; n = 20
 xi = rep(0.7, p); eta = rep(0.8, p)
 a = 30; b = 15
 
-# Simulate data using simulate_transitivity function
-simulated_data = simulate_transitivity(p, n, xi, eta, a, b)
+# Simulate data using simulateTransitivity function
+simulated_data = simulateTransitivity(p, n, xi, eta, a, b)
 X = simulated_data$X
 
 # Calculate transitivity statistics

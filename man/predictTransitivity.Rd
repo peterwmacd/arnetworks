@@ -34,14 +34,14 @@ p = 30; n = 20
 xi = rep(0.7, p); eta = rep(0.8, p)
 a = 30; b = 15
 
-# Simulate data using simulate_transitivity function
-simulated_data = simulate_transitivity(p, n, xi, eta, a, b)
+# Simulate data using simulateTransitivity function
+simulated_data = simulateTransitivity(p, n, xi, eta, a, b)
 X = simulated_data$X
 U = simulated_data$U
 V = simulated_data$V
 
-# Fit model using estTransitivity function
-result = estTransitivity(X, U, V)
+# Model parameters in format of estTransitivity
+result = list(gVal=c(25,5), xi=rep(0.8, p), eta=rep(0.7, p))
 
 # Predict the next 2 snapshots using predictTransitivity
 pred = predictTransitivity(result,X[,,n],nStep=2)

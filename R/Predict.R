@@ -22,8 +22,8 @@
 #' xi = rep(0.7, p); eta = rep(0.8, p)
 #' a = 30; b = 15
 #'
-#' # Simulate data using simulate_transitivity function
-#' simulated_data = simulate_transitivity(p, n, xi, eta, a, b)
+#' # Simulate data using simulateTransitivity function
+#' simulated_data = simulateTransitivity(p, n, xi, eta, a, b)
 #' X = simulated_data$X
 #' U = simulated_data$U[, , 1:(n - 1)]
 #' V = simulated_data$V[, , 1:(n - 1)]
@@ -35,19 +35,26 @@
 #'
 #' # Define edge formation and dissolution functions based on transitivity model
 #' fij = function(global, stats) {
-#'   exp(global[1] * stats[, , , 1,drop=FALSE]) /
-#'   (1 + exp(global[1] * stats[, , , 1,drop=FALSE]) + exp(global[2] * stats[, , , 2,drop=FALSE]))
+#'   p <- dim(stats)[1]
+#'   n <- dim(stats)[3]
+#'   temp <- exp(global[1] * stats[, , , 1]) /
+#'   (1 + exp(global[1] * stats[, , , 1]) + exp(global[2] * stats[, , , 2]))
+#'   return(array(temp,c(p,p,n)))
 #' }
 #' gij = function(global, stats) {
-#'   exp(global[2] * stats[, , , 2,drop=FALSE]) /
-#'   (1 + exp(global[1] * stats[, , , 1,drop=FALSE]) + exp(global[2] * stats[, , , 2,drop=FALSE]))
+#'   p <- dim(stats)[1]
+#'   n <- dim(stats)[3]
+#'   temp <- exp(global[2] * stats[, , , 2]) /
+#'   (1 + exp(global[1] * stats[, , , 1]) + exp(global[2] * stats[, , , 2]))
+#'   return(array(temp,c(p,p,n)))
 #' }
 #'
-#' result = estNet(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta,
-#'                 shrGPrm = 2)
+#' # parameters in the format of estNet
+#' result = list(gAlphaVal=c(25,5),gBetaVal=c(25,5),
+#'               xi=rep(0.8,p),eta=rep(0.7,p))
 #'
 #' Xnew = X[,,n]
-#' statsAlphaNew = statsBetaNew = array(c(U[,,n],V[,,n]),c(p,p,1,2))
+#' statsAlphaNew = statsBetaNew = array(c(simulated_data$U[,,n],simulated_data$V[,,n]),c(p,p,1,2))
 #' pred = predictNet(result,Xnew,statsAlphaNew,statsBetaNew,fij,gij)
 #'
 #' @export
@@ -92,14 +99,14 @@ predictNet <- function(estimates,
 #' xi = rep(0.7, p); eta = rep(0.8, p)
 #' a = 30; b = 15
 #'
-#' # Simulate data using simulate_transitivity function
-#' simulated_data = simulate_transitivity(p, n, xi, eta, a, b)
+#' # Simulate data using simulateTransitivity function
+#' simulated_data = simulateTransitivity(p, n, xi, eta, a, b)
 #' X = simulated_data$X
 #' U = simulated_data$U
 #' V = simulated_data$V
 #'
-#' # Fit model using estTransitivity function
-#' result = estTransitivity(X, U, V)
+#' # Model parameters in format of estTransitivity
+#' result = list(gVal=c(25,5), xi=rep(0.8, p), eta=rep(0.7, p))
 #'
 #' # Predict the next 2 snapshots using predictTransitivity
 #' pred = predictTransitivity(result,X[,,n],nStep=2)
