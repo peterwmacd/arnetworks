@@ -41,7 +41,7 @@ library(arnetworks)
 
 The package also allows users to specify their own AR network models with both local and global parameters. This is a basic example which shows how to simulate, estimate and predict with the persistence model (see Fang et al. (2024+), Section Y.Y).
 
-```{r example2, eval=FALSE}
+```{r example2}
 library(arnetworks)
 # Persistence Model
 
@@ -83,7 +83,7 @@ print(fit2$gBetaVal)
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$xi))
 # local parameters for edge formation (quartiles)
-print(quantile(fit2$xi))
+print(quantile(fit2$eta))
 
 # Predict the next network snapshot
 

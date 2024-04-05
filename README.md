@@ -73,12 +73,18 @@ fit2 <- estNet(X, fij, gij,
 
 # global parameter for edge formation
 print(fit2$gAlphaVal)
+#> [1] 0.7964095
 # global parameter for edge dissolution
 print(fit2$gBetaVal)
+#> [1] 0.7806978
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$xi))
+#>        0%       25%       50%       75%      100% 
+#> 0.4282513 0.7076076 0.8253161 1.0036155 1.3879133
 # local parameters for edge formation (quartiles)
-print(quantile(fit2$xi))
+print(quantile(fit2$eta))
+#>        0%       25%       50%       75%      100% 
+#> 0.4111616 0.7799851 0.8964201 0.9683512 1.4531107
 
 # Predict the next network snapshot
 
