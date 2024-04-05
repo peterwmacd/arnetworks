@@ -1,14 +1,16 @@
-#' Simulate a Transitivity Model
+#' Simulation for Autoregressive Networks with Transitivity
 #'
-#' Simulates the evolution of a network based on a transitivity model. This model
-#' incorporates specified local and global parameters to influence the dynamics of network
+#' This function simulates the evolution of a network based on an autoregressive network model with transitivity effects.
+#' This model incorporates specified local and global parameters to influence the dynamics of network
 #' connections over time, utilizing a burn-in period to achieve stationarity.
 #'
 #' The model's evolution is characterized by two key equations that govern the probability
 #' of edge formation and dissolution between nodes, based on the numbers of common and uncommon friends:
 #' \deqn{\alpha_{i,j}^{t-1} = \xi_i\xi_j \frac{\exp(a U_{i,j}^{t-1})}{1 + \exp(a U_{i,j}^{t-1}) + \exp(b V_{i,j}^{t-1})},}
 #' \deqn{\beta_{i,j}^{t-1} = \eta_i\eta_j \frac{\exp(b V_{i,j}^{t-1})}{1 + \exp(a U_{i,j}^{t-1}) + \exp(b V_{i,j}^{t-1})},}
-#' where \eqn{U_{i,j}^{t-1} = \sum_{k \neq i,j} X_{i,k}^{t-1}X_{j,k}^{t-1}/(p-2)} and \eqn{V_{i,j}^{t-1} = \sum_{k \neq i,j} [X_{i,k}^{t-1}(1-X_{j,k}^{t-1}) + (1-X_{i,k}^{t-1})X_{j,k}^{t-1}]/(p-2)}  denote the normalized counts of common and uncommon friends between nodes \eqn{i} and \eqn{j} at time \eqn{t-1}, respectively.
+#' where \eqn{U_{i,j}^{t-1} = \sum_{k \neq i,j} X_{i,k}^{t-1}X_{j,k}^{t-1}/(p-2)} and
+#' \eqn{V_{i,j}^{t-1} = \sum_{k \neq i,j} [X_{i,k}^{t-1}(1-X_{j,k}^{t-1}) + (1-X_{i,k}^{t-1})X_{j,k}^{t-1}]/(p-2)}
+#' denote the normalized counts of common and uncommon friends between nodes \eqn{i} and \eqn{j} at time \eqn{t-1}, respectively.
 #'
 #' @param p Integer, number of nodes.
 #' @param n Integer, number of observations, excluding the burn-in period.
@@ -85,9 +87,9 @@ simulateTransitivity <- function(p, n, xi, eta, a, b, burn_in = 200) {
 }
 
 
-#' Simulate a Density-Dependent Network Model
+#' Simulation for Autoregressive Networks with Density Effects
 #'
-#' Simulates the evolution of a network based on a density-dependent model. This model
+#' This function simulates the evolution of an autoregressive network model with density effects. This model
 #' incorporates specified local and global parameters to influence the dynamics of network
 #' connections over time, utilizing a burn-in period to achieve stationarity.
 #'
@@ -95,7 +97,7 @@ simulateTransitivity <- function(p, n, xi, eta, a, b, burn_in = 200) {
 #' of edge formation and dissolution between nodes, based on the network's density metrics:
 #' \deqn{\alpha_{i,j}^{t-1} = \xi_i\xi_j \frac{\exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\}}{1 + \exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\} + \exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}},}
 #' \deqn{\beta_{i,j}^{t-1} = \eta_i\eta_j \frac{\exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}}{1 + \exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\} + \exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}},}
-#' where \eqn{D_{-i,-j}^{t-1}} represents the network density excluding nodes \eqn{i} and \eqn{j}, and \eqn{D_i^{t-1}} denotes the density of node \eqn{i} at time \eqn{t-1}, respectively.
+#' where \eqn{D_{-i,-j}^{t-1}} represents the network density excluding nodes \eqn{i} and \eqn{j}, and \eqn{D_i^{t-1}} denotes the normalized degree of node \eqn{i} at time \eqn{t-1}, respectively.
 #'
 #' @param p Integer, specifying the number of nodes in the network.
 #' @param n Integer, indicating the number of observations to simulate, excluding the burn-in period.
@@ -106,7 +108,7 @@ simulateTransitivity <- function(p, n, xi, eta, a, b, burn_in = 200) {
 #' @param burn_in Integer, the length of the burn-in period for achieving stationarity.
 #' @return A list containing:
 #'    - \code{X}: An array of the network's adjacency matrices over time (\eqn{p} x \eqn{p} x \eqn{n}), after the burn-in period.
-#'    - \code{D}: A matrix of individual node densities over time (\eqn{p} x \eqn{n}).
+#'    - \code{D}: A matrix of individual node normalized degrees over time (\eqn{p} x \eqn{n}).
 #'    - \code{Dcij}: An array of network densities excluding specific node pairs (\eqn{i, j}) over time (\eqn{p} x \eqn{p} x \eqn{n}), for probability calculations.
 #' @examples
 #' p = 30; n = 20
@@ -121,8 +123,8 @@ simulateDensity <- function(p, n, xi, eta, a, b, burn_in = 200) {
   D <- matrix(0, nrow = p, ncol = n + burn_in)  # Node degree/density matrix
   Dcij <- array(0, dim = c(p, p, n + burn_in))  # Density excluding nodes i, j
 
-  xiM <- xi %*% t(xi)  # Local parameter matrix for xi
-  etaM <- eta %*% t(eta)  # Local parameter matrix for eta
+  xiM <- tcrossprod(xi)  # Local parameter matrix for xi
+  etaM <- tcrossprod(eta)  # Local parameter matrix for eta
 
   for (t in 1:(n + burn_in)) {
     if (t == 1) {
@@ -177,9 +179,9 @@ simulateDensity <- function(p, n, xi, eta, a, b, burn_in = 200) {
 }
 
 
-#' Simulate a Persistence Model
+#' Simulation for Autoregressive Networks with Persistence
 #'
-#' Simulates the evolution of a network based on a persistence model. This model
+#' This function simulates the evolution of an autoregressive network model with persistence effects. This model
 #' incorporates specified local and global parameters to influence the dynamics of network
 #' connections over time, utilizing a burn-in period to achieve stationarity.
 #'
@@ -191,14 +193,14 @@ simulateDensity <- function(p, n, xi, eta, a, b, burn_in = 200) {
 #' X_{i,j}^{t-2} X_{i,j}^{t-3} \right] \right),}
 #' where \eqn{\alpha_{i,j}^{t-1}} and \eqn{\beta_{i,j}^{t-1}} represent the probabilities
 #' of edge formation and dissolution, respectively, modulated by the interaction of
-#' nodes \eqn{i} and \eqn{j} in previous timesteps.
+#' nodes \eqn{i} and \eqn{j} in timesteps \eqn{t-2} and \eqn{t-3}.
 #'
 #' @param p Integer, specifying the number of nodes in the network.
 #' @param n Integer, indicating the number of observations to simulate, excluding the burn-in period.
 #' @param xi Numeric vector of length \eqn{p}, representing local parameter values that influence \eqn{\alpha_{i,j}^{t-1}}.
 #' @param eta Numeric vector of length \eqn{p}, representing local parameter values that influence \eqn{\beta_{i,j}^{t-1}}.
-#' @param a Global parameter that influence \eqn{\alpha_{i,j}^{t-1}}.
-#' @param b Global parameter that influence \eqn{\beta_{i,j}^{t-1}}.
+#' @param a Global parameter that influences \eqn{\alpha_{i,j}^{t-1}}.
+#' @param b Global parameter that influences \eqn{\beta_{i,j}^{t-1}}.
 #' @param burn_in Integer, the length of the burn-in period for achieving stationarity.
 #' @return A list containing:
 #'    - \code{X}: An array of the network's adjacency matrices over time (\eqn{p} x \eqn{p} x \eqn{n}), after the burn-in period.

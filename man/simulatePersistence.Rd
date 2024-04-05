@@ -2,7 +2,7 @@
 % Please edit documentation in R/SimulateNet.R
 \name{simulatePersistence}
 \alias{simulatePersistence}
-\title{Simulate a Persistence Model}
+\title{Simulation for Autoregressive Networks with Persistence}
 \usage{
 simulatePersistence(p, n, xi, eta, a, b, burn_in = 200)
 }
@@ -15,9 +15,9 @@ simulatePersistence(p, n, xi, eta, a, b, burn_in = 200)
 
 \item{eta}{Numeric vector of length \eqn{p}, representing local parameter values that influence \eqn{\beta_{i,j}^{t-1}}.}
 
-\item{a}{Global parameter that influence \eqn{\alpha_{i,j}^{t-1}}.}
+\item{a}{Global parameter that influences \eqn{\alpha_{i,j}^{t-1}}.}
 
-\item{b}{Global parameter that influence \eqn{\beta_{i,j}^{t-1}}.}
+\item{b}{Global parameter that influences \eqn{\beta_{i,j}^{t-1}}.}
 
 \item{burn_in}{Integer, the length of the burn-in period for achieving stationarity.}
 }
@@ -28,7 +28,7 @@ A list containing:
 }
 }
 \description{
-Simulates the evolution of a network based on a persistence model. This model
+This function simulates the evolution of an autoregressive network model with persistence effects. This model
 incorporates specified local and global parameters to influence the dynamics of network
 connections over time, utilizing a burn-in period to achieve stationarity.
 }
@@ -41,7 +41,7 @@ of edge formation and dissolution between nodes, based on previous states of the
 X_{i,j}^{t-2} X_{i,j}^{t-3} \right] \right),}
 where \eqn{\alpha_{i,j}^{t-1}} and \eqn{\beta_{i,j}^{t-1}} represent the probabilities
 of edge formation and dissolution, respectively, modulated by the interaction of
-nodes \eqn{i} and \eqn{j} in previous timesteps.
+nodes \eqn{i} and \eqn{j} in timesteps \eqn{t-2} and \eqn{t-3}.
 }
 \examples{
 p = 30; n = 20

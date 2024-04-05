@@ -2,7 +2,7 @@
 % Please edit documentation in R/EstNet.R
 \name{estNet}
 \alias{estNet}
-\title{Dynamic Network Estimation with Autoregressive Framework}
+\title{Estimation for General Autoregressive Networks}
 \usage{
 estNet(
   X,
@@ -13,8 +13,8 @@ estNet(
   globInitAlpha,
   globInitBeta,
   shrGPrm,
-  initXi = NA,
-  initEta = NA,
+  initXi = NULL,
+  initEta = NULL,
   updateMethod = "sequential",
   tol = 0.01,
   maxIter = 100
@@ -58,8 +58,9 @@ A list containing the estimated parameters:
 }
 }
 \description{
-This function estimates dynamic network models using an iterative estimation
-procedure based on the autoregressive network framework. The method alternates
+This function estimates the parameters of a user-specified autoregressive network model
+using an iterative estimation
+procedure. The method alternates
 between optimizing global and local parameters, capturing edge formation and
 dissolution dynamics in dynamic networks.
 }
@@ -148,6 +149,6 @@ gij <- function(global, stats) {
 
 result <- estNet(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta,
                  shrGPrm = 0, maxIter = 2)
-# NOTE: small maxIter used to speed example runtime, default value is 100
+# NOTE: small maxIter used to limit example runtime, default value is 100
 
 }

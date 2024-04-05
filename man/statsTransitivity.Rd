@@ -2,7 +2,7 @@
 % Please edit documentation in R/EstTransitivity.R
 \name{statsTransitivity}
 \alias{statsTransitivity}
-\title{Transitivity statistics for Dynamic Networks}
+\title{Transitivity Statistics for Dynamic Networks}
 \usage{
 statsTransitivity(X)
 }

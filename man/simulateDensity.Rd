@@ -2,7 +2,7 @@
 % Please edit documentation in R/SimulateNet.R
 \name{simulateDensity}
 \alias{simulateDensity}
-\title{Simulate a Density-Dependent Network Model}
+\title{Simulation for Autoregressive Networks with Density Effects}
 \usage{
 simulateDensity(p, n, xi, eta, a, b, burn_in = 200)
 }
@@ -25,12 +25,12 @@ simulateDensity(p, n, xi, eta, a, b, burn_in = 200)
 A list containing:
 \itemize{
 \item \code{X}: An array of the network's adjacency matrices over time (\eqn{p} x \eqn{p} x \eqn{n}), after the burn-in period.
-\item \code{D}: A matrix of individual node densities over time (\eqn{p} x \eqn{n}).
+\item \code{D}: A matrix of individual node normalized degrees over time (\eqn{p} x \eqn{n}).
 \item \code{Dcij}: An array of network densities excluding specific node pairs (\eqn{i, j}) over time (\eqn{p} x \eqn{p} x \eqn{n}), for probability calculations.
 }
 }
 \description{
-Simulates the evolution of a network based on a density-dependent model. This model
+This function simulates the evolution of an autoregressive network model with density effects. This model
 incorporates specified local and global parameters to influence the dynamics of network
 connections over time, utilizing a burn-in period to achieve stationarity.
 }
@@ -39,7 +39,7 @@ The model's evolution is characterized by two key equations that govern the prob
 of edge formation and dissolution between nodes, based on the network's density metrics:
 \deqn{\alpha_{i,j}^{t-1} = \xi_i\xi_j \frac{\exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\}}{1 + \exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\} + \exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}},}
 \deqn{\beta_{i,j}^{t-1} = \eta_i\eta_j \frac{\exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}}{1 + \exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\} + \exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}},}
-where \eqn{D_{-i,-j}^{t-1}} represents the network density excluding nodes \eqn{i} and \eqn{j}, and \eqn{D_i^{t-1}} denotes the density of node \eqn{i} at time \eqn{t-1}, respectively.
+where \eqn{D_{-i,-j}^{t-1}} represents the network density excluding nodes \eqn{i} and \eqn{j}, and \eqn{D_i^{t-1}} denotes the normalized degree of node \eqn{i} at time \eqn{t-1}, respectively.
 }
 \examples{
 p = 30; n = 20

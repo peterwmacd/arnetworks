@@ -1,7 +1,8 @@
-#' Dynamic Network Estimation with Autoregressive Framework
+#' Estimation for General Autoregressive Networks
 #'
-#' This function estimates dynamic network models using an iterative estimation
-#' procedure based on the autoregressive network framework. The method alternates
+#' This function estimates the parameters of a user-specified autoregressive network model
+#' using an iterative estimation
+#' procedure. The method alternates
 #' between optimizing global and local parameters, capturing edge formation and
 #' dissolution dynamics in dynamic networks.
 #'
@@ -113,12 +114,11 @@
 #'
 #' result <- estNet(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta,
 #'                  shrGPrm = 0, maxIter = 2)
-#' # NOTE: small maxIter used to speed example runtime, default value is 100
+#' # NOTE: small maxIter used to limit example runtime, default value is 100
 #'
-#' @importFrom stats optim
 #' @export
 estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta, shrGPrm,
-                  initXi = NA, initEta = NA, updateMethod="sequential", tol = 0.01, maxIter = 100){
+                  initXi = NULL, initEta = NULL, updateMethod="sequential", tol = 0.01, maxIter = 100){
   #Preparation:
   p = dim(X)[1]
   n = dim(X)[3]
@@ -127,6 +127,14 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
   B1 = (1 - X[,,2:n])*(1 - X[,,2:n-1])
   A2 = (1 - X[,,2:n])*( X[,,2:n-1])
   B2 = X[,,2:n]*(X[,,2:n-1])
+
+  # check dimensions for initial Xi,Eta
+  if((!is.null(initXi) & !(length(initXi)==p))){
+    stop('Incorrect dimension for initXi')
+  }
+  if((!is.null(initEta) & !(length(initEta)==p))){
+    stop('Incorrect dimension for initEta')
+  }
 
   # Check the first three dimensions of statsAlpha and statsBeta
   expectedDims = c(p, p, n - 1)
@@ -166,13 +174,13 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
   })
 
 
-  if (is.na(initXi)){
+  if (is.null(initXi)){
     xiE = rep(1,p)
   }else{
     xiE = initXi
   }
 
-  if (is.na(initEta)){
+  if (is.null(initEta)){
     etaE = rep(1,p)
   }else{
     etaE = initEta
@@ -193,7 +201,6 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
 
   gAlphaVal.E0 = gAlphaVal.E = globInitAlpha
   gBetaVal.E0 = gBetaVal.E = globInitBeta
-
 
 
   if ( da < shrGPrm | db < shrGPrm){
@@ -228,7 +235,7 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
         }
 
         xiE = locEst(xiME)
-        xiME = outer(xiE,xiE)
+        xiME = tcrossprod(xiE)
 
         for (ix in 1:da){
           tmp2 = stats::optim(gAlphaVal.E0[ix], globalMLE, method = "L-BFGS-B", lower = c(0.01), ix = ix, A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateAlpha = TRUE)
@@ -264,7 +271,7 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
         }
 
         etaE = locEst(etaME)
-        etaME = outer(etaE,etaE)
+        etaME = tcrossprod(etaE)
 
         for (ix in 1:db){
           tmp2 = stats::optim(gBetaVal.E0[ix], globalMLE, method = "L-BFGS-B", lower = c(0.01), ix = ix, A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateAlpha = F)
@@ -323,8 +330,8 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
 
       xiE = locEst(xiME)
       etaE = locEst(etaME)
-      xiME = outer(xiE,xiE)
-      etaME = outer(etaE,etaE)
+      xiME = tcrossprod(xiE)
+      etaME = tcrossprod(etaE)
 
       if ( shrGPrm>0){
         for (ix in 1:shrGPrm){
@@ -381,7 +388,7 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
         }
 
         xiE = locEst(xiME)
-        xiME = outer(xiE,xiE)
+        xiME = tcrossprod(xiE)
 
         for (ix in 1:da){
           tmp2 = stats::optim(gAlphaVal.E0, globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,da), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare= F,updateAlpha = TRUE)
@@ -417,7 +424,7 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
         }
 
         etaE = locEst(etaME)
-        etaME = outer(etaE,etaE)
+        etaME = tcrossprod(etaE)
 
         for (ix in 1:db){
           tmp2 = stats::optim(gBetaVal.E0, globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,db),  A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = F, updateAlpha = F)
@@ -471,8 +478,8 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
 
       xiE = locEst(xiME)
       etaE = locEst(etaME)
-      xiME = outer(xiE,xiE)
-      etaME = outer(etaE,etaE)
+      xiME = tcrossprod(xiE)
+      etaME = tcrossprod(etaE)
 
       if ( shrGPrm>0){
         tmp0 = stats::optim(gAlphaVal.E0[1:shrGPrm], globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,shrGPrm), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = T,updateAlpha = TRUE)

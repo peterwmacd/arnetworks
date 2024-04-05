@@ -2,7 +2,7 @@
 % Please edit documentation in R/SimulateNet.R
 \name{simulateTransitivity}
 \alias{simulateTransitivity}
-\title{Simulate a Transitivity Model}
+\title{Simulation for Autoregressive Networks with Transitivity}
 \usage{
 simulateTransitivity(p, n, xi, eta, a, b, burn_in = 200)
 }
@@ -30,8 +30,8 @@ A list with the following components:
 }
 }
 \description{
-Simulates the evolution of a network based on a transitivity model. This model
-incorporates specified local and global parameters to influence the dynamics of network
+This function simulates the evolution of a network based on an autoregressive network model with transitivity effects.
+This model incorporates specified local and global parameters to influence the dynamics of network
 connections over time, utilizing a burn-in period to achieve stationarity.
 }
 \details{
@@ -39,7 +39,9 @@ The model's evolution is characterized by two key equations that govern the prob
 of edge formation and dissolution between nodes, based on the numbers of common and uncommon friends:
 \deqn{\alpha_{i,j}^{t-1} = \xi_i\xi_j \frac{\exp(a U_{i,j}^{t-1})}{1 + \exp(a U_{i,j}^{t-1}) + \exp(b V_{i,j}^{t-1})},}
 \deqn{\beta_{i,j}^{t-1} = \eta_i\eta_j \frac{\exp(b V_{i,j}^{t-1})}{1 + \exp(a U_{i,j}^{t-1}) + \exp(b V_{i,j}^{t-1})},}
-where \eqn{U_{i,j}^{t-1} = \sum_{k \neq i,j} X_{i,k}^{t-1}X_{j,k}^{t-1}/(p-2)} and \eqn{V_{i,j}^{t-1} = \sum_{k \neq i,j} [X_{i,k}^{t-1}(1-X_{j,k}^{t-1}) + (1-X_{i,k}^{t-1})X_{j,k}^{t-1}]/(p-2)}  denote the normalized counts of common and uncommon friends between nodes \eqn{i} and \eqn{j} at time \eqn{t-1}, respectively.
+where \eqn{U_{i,j}^{t-1} = \sum_{k \neq i,j} X_{i,k}^{t-1}X_{j,k}^{t-1}/(p-2)} and
+\eqn{V_{i,j}^{t-1} = \sum_{k \neq i,j} [X_{i,k}^{t-1}(1-X_{j,k}^{t-1}) + (1-X_{i,k}^{t-1})X_{j,k}^{t-1}]/(p-2)}
+denote the normalized counts of common and uncommon friends between nodes \eqn{i} and \eqn{j} at time \eqn{t-1}, respectively.
 }
 \examples{
 p = 30; n = 20

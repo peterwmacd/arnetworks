@@ -8,6 +8,8 @@ estTransitivity(
   X,
   U = NULL,
   V = NULL,
+  initXi = NULL,
+  initEta = NULL,
   rSeqGlob = c(0.5, 0.1),
   rSeqLoc = c(0.5, 0.1),
   verbose = FALSE
@@ -23,6 +25,10 @@ ignored in the likelihood calculations. If not provided, it will be calculated i
 \item{V}{A \eqn{p \times p \times n} or \eqn{p \times p \times (n-1)} array of the normalized number of
 disjoint neighbour statistics. If a \eqn{p \times p \times n} array is provided, the \code{n}th slice is
 ignored in the likelihood calculations. If not provided, it will be calculated internally from \code{X}.}
+
+\item{initXi}{Initial values for \eqn{\xi_1, \dots, \xi_p}. Defaults to a vector of ones if NA.}
+
+\item{initEta}{Initial values for \eqn{\eta_1, \dots, \eta_p}. Defaults to a vector of ones if NA.}
 
 \item{rSeqGlob}{The sequence of control parameters for the refinement of global parameters. Defaults
 to \code{c(0.5,0.1)}. Note that \code{rSeqGlob} and \code{rSeqLoc} must have the same length.}
@@ -75,7 +81,7 @@ are refined by maximizing a linear restriction of the local or global likelihood
 }
 }
 \examples{
-p = 30; n = 10
+p = 20; n = 20
 xi = rep(0.7, p); eta = rep(0.8, p)
 a = 30; b = 15
 

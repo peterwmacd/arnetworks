@@ -1,4 +1,4 @@
-#' Transitivity statistics for Dynamic Networks
+#' Transitivity Statistics for Dynamic Networks
 #'
 #' This function calculates statistics which summarize the higher-order structure
 #' of a dynamic network object: normalized number of common and disjoint neighbours
@@ -91,6 +91,8 @@ statsTransitivity <- function(X){
 #' @param V A \eqn{p \times p \times n} or \eqn{p \times p \times (n-1)} array of the normalized number of
 #' disjoint neighbour statistics. If a \eqn{p \times p \times n} array is provided, the \code{n}th slice is
 #' ignored in the likelihood calculations. If not provided, it will be calculated internally from \code{X}.
+#' @param initXi Initial values for \eqn{\xi_1, \dots, \xi_p}. Defaults to a vector of ones if NA.
+#' @param initEta Initial values for \eqn{\eta_1, \dots, \eta_p}. Defaults to a vector of ones if NA.
 #' @param rSeqGlob The sequence of control parameters for the refinement of global parameters. Defaults
 #' to \code{c(0.5,0.1)}. Note that \code{rSeqGlob} and \code{rSeqLoc} must have the same length.
 #' @param rSeqLoc The sequence of control parameters for the refinement of local parameters. Defaults
@@ -106,7 +108,7 @@ statsTransitivity <- function(X){
 #' }
 #'
 #' @examples
-#' p = 30; n = 10
+#' p = 20; n = 20
 #' xi = rep(0.7, p); eta = rep(0.8, p)
 #' a = 30; b = 15
 #'
@@ -121,6 +123,7 @@ statsTransitivity <- function(X){
 #'
 #' @export
 estTransitivity <- function(X,U=NULL,V=NULL,
+                            initXi=NULL,initEta=NULL,
                             rSeqGlob=c(0.5,0.1),rSeqLoc=c(0.5,0.1),
                             verbose=FALSE){
   # dimensions
@@ -130,6 +133,12 @@ estTransitivity <- function(X,U=NULL,V=NULL,
   # additional parameter checking
   if(!(length(rSeqGlob)==length(rSeqLoc))){
     stop('Global and local refinement control sequences must be the same length')
+  }
+  if((!is.null(initXi) & !(length(initXi)==p))){
+    stop('Incorrect dimension for initXi')
+  }
+  if((!is.null(initEta) & !(length(initEta)==p))){
+    stop('Incorrect dimension for initEta')
   }
 
   # transitivity statistics
@@ -196,10 +205,23 @@ estTransitivity <- function(X,U=NULL,V=NULL,
   # }
 
   # initialize all xis, etas as 1
-  xiME <- matrix(1,p,p)
-  etaME <- matrix(1,p,p)
-  xiE <- rep(1,p)
-  etaE <- rep(1,p)
+  if(is.null(initXi)){
+    xiME <- matrix(1,p,p)
+    xiE <- rep(1,p)
+  }
+  else{
+    xiME <- tcrossprod(initXi)
+    xiE <- initXi
+  }
+
+  if(is.null(initEta)){
+    etaME <- matrix(1,p,p)
+    etaE <- rep(1,p)
+  }
+  else{
+    etaME <- tcrossprod(initEta)
+    etaE <- initEta
+  }
 
   tmp0 = stats::optim(c(tol,tol), globalMLE_ab_et, gr = grr_globalMLE_ab_et, method = "L-BFGS-B",
                       lower = c(0,0), upper=rep(ab_max,2),

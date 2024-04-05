@@ -2,7 +2,7 @@
 % Please edit documentation in R/Predict.R
 \name{predictTransitivity}
 \alias{predictTransitivity}
-\title{Prediction for autoregressive network models with transitivity}
+\title{Prediction for Autoregressive Networks with Transitivity}
 \usage{
 predictTransitivity(estimates, Xnew, Unew = NULL, Vnew = NULL, nStep = 1)
 }

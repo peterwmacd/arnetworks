@@ -1,4 +1,4 @@
-#' Prediction for general autoregressive network models
+#' Prediction for General Autoregressive Networks
 #'
 #' This function predicts the edge probabilities of the next snapshot of a sequence of
 #' dynamic networks based on a model
@@ -75,12 +75,11 @@ predictNet <- function(estimates,
   return(Pred)
 }
 
-#' Prediction for autoregressive network models with transitivity
+#' Prediction for Autoregressive Networks with Transitivity
 #'
 #' This function recursively predicts the edge probabilities of future snapshots of a sequence of
 #' dynamic networks based on a model
 #' fit using \code{estTransitivity}.
-#'
 #'
 #' @param estimates A list of parameter estimates from \code{estTransitivity}.
 #' @param Xnew A \eqn{p \times p} matrix of the network's current adjacency matrix from which to

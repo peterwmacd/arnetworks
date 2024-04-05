@@ -2,7 +2,7 @@
 % Please edit documentation in R/Predict.R
 \name{predictNet}
 \alias{predictNet}
-\title{Prediction for general autoregressive network models}
+\title{Prediction for General Autoregressive Networks}
 \usage{
 predictNet(estimates, Xnew, statsAlphaNew, statsBetaNew, fij, gij)
 }
