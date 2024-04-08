@@ -5,7 +5,7 @@
 
 The goal of arnetworks is to simulate, estimate and predict from
 autoregressive (AR) network models with edge dependence, following the
-framework specified in Fang et al. (2024+).
+framework specified in Chang et al. (2024+).
 
 ## Installation
 
