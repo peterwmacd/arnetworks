@@ -49,3 +49,6 @@ xi = rep(0.7, p); eta = rep(0.8, p)
 a = 30; b = 15
 result = simulateTransitivity(p, n, xi, eta, a, b)
 }
+\references{
+Chang, J., Fang, Q., Kolaczyk, E. D., MacDonald, P. W., & Yao, Q. (2024). Autoregressive Networks with Dependent Edges.
+}

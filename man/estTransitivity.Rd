@@ -10,7 +10,7 @@ estTransitivity(
   V = NULL,
   initXi = NULL,
   initEta = NULL,
-  rSeqGlob = c(0.5, 0.1),
+  rSeqGlob = c(10, 2),
   rSeqLoc = c(0.5, 0.1),
   verbose = FALSE
 )
@@ -26,14 +26,14 @@ ignored in the likelihood calculations. If not provided, it will be calculated i
 disjoint neighbour statistics. If a \eqn{p \times p \times n} array is provided, the \code{n}th slice is
 ignored in the likelihood calculations. If not provided, it will be calculated internally from \code{X}.}
 
-\item{initXi}{Initial values for \eqn{\xi_1, \dots, \xi_p}. Defaults to a vector of ones if NA.}
+\item{initXi}{Initial values for \eqn{\xi_1, \dots, \xi_p}. It will be calculated internally if NULL.}
 
-\item{initEta}{Initial values for \eqn{\eta_1, \dots, \eta_p}. Defaults to a vector of ones if NA.}
+\item{initEta}{Initial values for \eqn{\eta_1, \dots, \eta_p}. It will be calculated internally if NULL.}
 
-\item{rSeqGlob}{The sequence of control parameters for the refinement of global parameters. Defaults
-to \code{c(0.5,0.1)}. Note that \code{rSeqGlob} and \code{rSeqLoc} must have the same length.}
+\item{rSeqGlob}{A numeric vector specifying the search range for refining global parameters.  Defaults
+to \code{c(10,2)}. Note that \code{rSeqGlob} and \code{rSeqLoc} must have the same length.}
 
-\item{rSeqLoc}{The sequence of control parameters for the refinement of local parameters. Defaults
+\item{rSeqLoc}{A numeric vector specifying the search range for refining local parameters. Defaults
 to \code{c(0.5,0.1)}.}
 
 \item{verbose}{An indicator, if \code{TRUE} there will be console output providing optimization
@@ -49,8 +49,8 @@ A list containing the estimated parameters:
 }
 \description{
 This function estimates the parameters of an autoregressive network model with transitivity
-effects. The method performs local and global likelihood estimation, then applies a
-refinement procedure to each parameter estimate.
+effects, as detailed in "Autoregressive Networks with Dependent Edges". The method performs local and global likelihood estimation,  followed by a
+projection-based refinement step for each parameter estimate.
 }
 \details{
 This autoregressive network model contains a total of \eqn{2 + 2p} parameters.
@@ -63,21 +63,24 @@ Edge probabilities are modeled as
 \deqn{\alpha_{i,j}^{t-1} = \frac{\xi_i \xi_j \exp(a U_{i,j}^{t-1})}{1 + \exp(a U_{i,j}^{t-1}) + \exp(b V_{i,j}^{t-1})}}
 \deqn{\beta_{i,j}^{t-1} = \frac{\eta_i \eta_j \exp(b V_{i,j}^{t-1})}{1 + \exp(a U_{i,j}^{t-1}) + \exp(b V_{i,j}^{t-1})}}
 where
-\deqn{U^{t-1}_{i,j} = \frac{1}{p-2} \sum_k X_{i,k}^{t-1} X_{k,j}^{t-1}}
+\deqn{U_{i,j}^{t} = \frac{1}{p-2} \sum_{k \neq i,j} X_{i,k}^{t}X_{j,k}^{t}}
 is the normalized number of common neighbours of nodes \eqn{i} and \eqn{j} in snapshot \eqn{t-1}, and
-\deqn{V^{t-1}_{i,j} = \frac{1}{p-2} \sum_k \{ X_{i,k}^{t-1}(1 - X_{k,j}^{t-1}) +  (1 - X_{i,k}^{t-1})X_{k,j}^{t-1} \}}
+\deqn{V_{i,j}^{t} =  \frac{1}{p-2} \sum_{k \neq i,j} \{ X_{i,k}^{t-1}(1-X_{j,k}^{t}) + (1-X_{i,k}^{t-1})X_{j,k}^{t}\}}
 is the normalized number of disjoint neighbours of nodes \eqn{i} and \eqn{j} in snapshot \eqn{t-1}.
 
 Estimation Procedure:
 \enumerate{
-\item \strong{Initialization}: automatic initialization of global parameters.
-\item \strong{Local Optimization}: With global parameters set to their initial values, local
-log-likelihood functions are maximized through a Newton method to update local parameter estimates.
-\item \strong{Global Optimization}: With local parameters estimated in the previous stage, a global
-log-likelihood function is maximized through a Newton method to
+\item \strong{Initialization}: Sets initial values for local parameters.
+\item \strong{Global Optimization}: Utilizes initialized local parameters within a global
+log-likelihood function, optimizing it through a quasi-Newton method to
 estimate global parameters.
-\item \strong{Refinement}: For a prespecified number of iterations, global and local parameters estimates
-are refined by maximizing a linear restriction of the local or global likelihood functions.
+\item \strong{Local Optimization}: With global parameters estimated in the previous stage, local
+log-likelihood functions are maximized through a Newton method to update local parameter estimates.
+\item \strong{Refinement}: Incorporates a projection-based refinement process to improve the
+previous maximum likelihood estimates (MLEs). The tuning parameter \eqn{\tau}
+is set internally to \eqn{0.5 \Delta_n^{1/2}} for local parameters and \eqn{0.01 \Delta_n^{1/2}}
+for global parameters, a strategy empirically validated through extensive numerical
+studies documented in Chang et al. (2024).
 }
 }
 \examples{
@@ -91,7 +94,9 @@ X = simulated_data$X
 U = simulated_data$U
 V = simulated_data$V
 
-result = estTransitivity(X, U, V, rSeqGlob=0.5, rSeqLoc=0.5)
+result = estTransitivity(X, U, V, rSeqGlob=10, rSeqLoc=0.5)
 # NOTE: short rSeq's used to limit example runtime, default has length 2
-
+}
+\references{
+Chang, J., Fang, Q., Kolaczyk, E. D., MacDonald, P. W., & Yao, Q. (2024). Autoregressive Networks with Dependent Edges.
 }

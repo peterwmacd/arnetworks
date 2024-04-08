@@ -20,8 +20,8 @@ A list containing the statistics:
 This function calculates statistics which summarize the higher-order structure
 of a dynamic network object: normalized number of common and disjoint neighbours
 between each pair of nodes in each snapshot:
-\deqn{U^{t-1}_{i,j} = \frac{1}{p-2} \sum_k X_{i,k}^{t-1} X_{k,j}^{t-1}}
-\deqn{V^{t-1}_{i,j} = \frac{1}{p-2} \sum_k \{ X_{i,k}^{t-1}(1 - X_{k,j}^{t-1}) +  (1 - X_{i,k}^{t-1})X_{k,j}^{t-1} \}}
+\deqn{U_{i,j}^{t} = \frac{1}{p-2} \sum_{k \neq i,j} X_{i,k}^{t}X_{j,k}^{t}}
+\deqn{V_{i,j}^{t} =  \frac{1}{p-2} \sum_{k \neq i,j} \{ X_{i,k}^{t-1}(1-X_{j,k}^{t}) + (1-X_{i,k}^{t-1})X_{j,k}^{t}\}}
 }
 \examples{
 p = 30; n = 20

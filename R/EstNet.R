@@ -41,8 +41,8 @@
 #' @param globInitBeta Initial values for global parameters in \code{gij}.
 #' @param shrGPrm Number of shared global parameters between \code{fij} and
 #'   \code{gij}.
-#' @param initXi Initial values for \eqn{\xi_1, \dots, \xi_p}. Defaults to a vector of ones if NA.
-#' @param initEta Initial values for \eqn{\eta_1, \dots, \eta_p}. Defaults to a vector of ones if NA.
+#' @param initXi Initial values for \eqn{\xi_1, \dots, \xi_p}. Defaults to a vector of ones if NULL.
+#' @param initEta Initial values for \eqn{\eta_1, \dots, \eta_p}. Defaults to a vector of ones if NULL.
 #' @param updateMethod Method for updating global parameters ("sequential" or "batch").
 #' @param tol Tolerance for the optimization process.
 #' @param maxIter Maximum iterations allowed for the optimization algorithm.
@@ -115,6 +115,8 @@
 #' result <- estNet(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta,
 #'                  shrGPrm = 0, maxIter = 2)
 #' # NOTE: small maxIter used to limit example runtime, default value is 100
+#' # NOTE: The provided examples are for illustration purpose. 
+#' #       Larger sample, e.g. p = 50 and n = 100, is recommended for better estimation performance.
 #'
 #' @export
 estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta, shrGPrm,

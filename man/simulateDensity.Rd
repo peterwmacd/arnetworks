@@ -49,3 +49,6 @@ a = c(0.5, 0.5)
 b = c(0.3, 0.3)
 result = simulateDensity(p, n, xi, eta, a, b)
 }
+\references{
+Chang, J., Fang, Q., Kolaczyk, E. D., MacDonald, P. W., & Yao, Q. (2024). Autoregressive Networks with Dependent Edges.
+}

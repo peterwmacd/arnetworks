@@ -28,6 +28,8 @@
 #' xi = rep(0.7, p); eta = rep(0.8, p)
 #' a = 30; b = 15
 #' result = simulateTransitivity(p, n, xi, eta, a, b)
+#' @references
+#' Chang, J., Fang, Q., Kolaczyk, E. D., MacDonald, P. W., & Yao, Q. (2024). Autoregressive Networks with Dependent Edges.
 #' @export
 simulateTransitivity <- function(p, n, xi, eta, a, b, burn_in = 200) {
   # Initialize arrays for the network and counts of common/uncommon friends
@@ -117,6 +119,8 @@ simulateTransitivity <- function(p, n, xi, eta, a, b, burn_in = 200) {
 #' a = c(0.5, 0.5)
 #' b = c(0.3, 0.3)
 #' result = simulateDensity(p, n, xi, eta, a, b)
+#' @references
+#' Chang, J., Fang, Q., Kolaczyk, E. D., MacDonald, P. W., & Yao, Q. (2024). Autoregressive Networks with Dependent Edges.
 #' @export
 simulateDensity <- function(p, n, xi, eta, a, b, burn_in = 200) {
   X <- array(0, dim = c(p, p, n + burn_in))  # Network adjacency matrices
@@ -211,6 +215,8 @@ simulateDensity <- function(p, n, xi, eta, a, b, burn_in = 200) {
 #' a = 0.5
 #' b = 0.5
 #' result = simulatePersistence(p, n, xi, eta, a, b)
+#' @references
+#' Chang, J., Fang, Q., Kolaczyk, E. D., MacDonald, P. W., & Yao, Q. (2024). Autoregressive Networks with Dependent Edges.
 #' @export
 simulatePersistence = function(p, n, xi, eta, a , b, burn_in = 200) {
   X <- array(0, dim = c(p, p, n + burn_in))
