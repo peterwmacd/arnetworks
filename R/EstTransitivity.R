@@ -157,7 +157,7 @@ estTransitivity <- function(X,U=NULL,V=NULL,
     if(all(dim(U)==c(p,p,n))){
       Uc <- U[,,-n]
     }
-    else if(all(dim(U)==c(p,p,n))){
+    else if(all(dim(U)==c(p,p,n-1))){
       Uc <- U
     }
     else{
@@ -176,7 +176,7 @@ estTransitivity <- function(X,U=NULL,V=NULL,
     if(all(dim(V)==c(p,p,n))){
       Vc <- V[,,-n]
     }
-    else if(all(dim(V)==c(p,p,n))){
+    else if(all(dim(V)==c(p,p,n-1))){
       Vc <- V
     }
     else{
