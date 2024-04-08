@@ -152,15 +152,13 @@ estTransitivity <- function(X,U=NULL,V=NULL,
     statsGlobal <- statsTransitivity(X)
     # likelihood uses clipped U without the final snapshot
     Uc <- statsGlobal$U[,,-n]
-  }
-  else{
+  }else{
     if(all(dim(U)==c(p,p,n))){
       Uc <- U[,,-n]
     }
     else if(all(dim(U)==c(p,p,n-1))){
       Uc <- U
-    }
-    else{
+    }else{
       stop('Incorrect dimensions for U')
     }
   }
@@ -171,15 +169,13 @@ estTransitivity <- function(X,U=NULL,V=NULL,
     }
     # likelihood uses clipped U without the final snapshot
     Vc <- statsGlobal$V[,,-n]
-  }
-  else{
+  }else{
     if(all(dim(V)==c(p,p,n))){
       Vc <- V[,,-n]
     }
     else if(all(dim(V)==c(p,p,n-1))){
       Vc <- V
-    }
-    else{
+    }else{
       stop('Incorrect dimensions for V')
     }
   }
@@ -282,8 +278,6 @@ estTransitivity <- function(X,U=NULL,V=NULL,
   
   ##### Initial value: ab1, xiE and etaE
   ##### Now we apply ONE ITERATION OF the global MLE for (a,b) and local MLE for xii and etai
-  # additional control for estimation of a,b
-  ab_max_est <- min(10*max(ab1),ab_max)
   # global MLE
   ab1  = stats::optim(ab1, globalMLE_ab_et, gr = grr_globalMLE_ab_et, method = "L-BFGS-B",
                       lower = c(tol,tol), upper=rep(ab_max_est,2),
