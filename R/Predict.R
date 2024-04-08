@@ -61,9 +61,14 @@
 predictNet <- function(estimates,
                        Xnew,statsAlphaNew,statsBetaNew,
                        fij,gij){
-  # check
-  if(!all(names(estimates)==c('gAlphaVal','gBetaVal','xi','eta'))){
-    stop('estimate names do not match estNet output')
+  # Define the expected names
+  expected_names <- c('gAlphaVal', 'gBetaVal', 'xi', 'eta')
+  
+  # Check if all names in 'estimates' match the expected names
+  if (!all(names(estimates) %in% expected_names)) {
+    # Create an error message that lists the expected names
+    expected_names_str <- paste("'", expected_names, "'", sep = "", collapse = ", ")
+    stop(sprintf("Estimate names do not match expected names. Expected names are: %s.", expected_names_str))
   }
   # calculate alphas for next snapshot
   Alpha <- tcrossprod(estimates$xi)*fij(estimates$gAlphaVal,statsAlphaNew)[,,1]
@@ -159,10 +164,14 @@ predictTransitivity <- function(estimates,
     }
   }
   # populate current U/V statistics
-  # parameters
-  # check
-  if(!all(names(estimates)==c('gVal','xi','eta'))){
-    stop('estimate names do not match estTransitivity output')
+  
+  # Define the expected names
+  expected_names <- c('gVal', 'xi', 'eta')
+  # Check if all names in 'estimates' match the expected names
+  if (!all(names(estimates) %in% expected_names)) {
+    # Create an error message that lists the expected names
+    expected_names_str <- paste("'", expected_names, "'", sep = "", collapse = ", ")
+    stop(sprintf("Estimate names do not match expected names. Expected names are: %s.", expected_names_str))
   }
   xiM <- tcrossprod(estimates$xi)
   etaM <- tcrossprod(estimates$eta)
