@@ -20,7 +20,7 @@ You can install the development version of arnetworks from
 ## Example 1: Transitivity Model
 
 The package provides a detailed implementation for fitting a particular
-AR network model with transitivity effects (see Fang et al. (2024+),
+AR network model with transitivity effects (see Chang et al. (2024+),
 Section X.X). This is a basic example which shows how to simulate,
 estimate and predict with this model.
 
@@ -34,7 +34,7 @@ library(arnetworks)
 The package also allows users to specify their own AR network models
 with both local and global parameters. This is a basic example which
 shows how to simulate, estimate and predict with the persistence model
-(see Fang et al. (2024+), Section Y.Y).
+(see Chang et al. (2024+), Section Y.Y).
 
 ``` r
 library(arnetworks)
