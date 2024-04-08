@@ -21,12 +21,58 @@ You can install the development version of arnetworks from
 
 The package provides a detailed implementation for fitting a particular
 AR network model with transitivity effects (see Chang et al. (2024+),
-Section X.X). This is a basic example which shows how to simulate,
+Section 3.3). This is a basic example which shows how to simulate,
 estimate and predict with this model.
 
 ``` r
 library(arnetworks)
-# transitivity model
+# Transitivity model
+
+p = 100; n = 50
+xi = rep(0.7, p); eta = rep(0.8, p)
+a = 30; b = 15
+
+# Simulate data using simulateTransitivity function
+data1 = simulateTransitivity(p, n, xi, eta, a, b)
+X = data1$X
+U = data1$U
+V = data1$V
+
+# in addition to the data, simulateTransitivity returns the sufficient statistics, the
+# scaled number of common and uncommon neighbours for each edge as U and V respectively
+
+fit1 = estTransitivity(X, U, V, rSeqGlob=c(50,10), rSeqLoc=c(0.5,0.1))
+
+# the model optimization requires tuning parameters rSeqGlob and rSeqLoc 
+# (see Chang et al. (2024+), Section 4.3). These parameters control the radius of search for the
+# estimator refinement. Default values are provided if not specified (see the documenation for
+# estTransitivity)
+
+# global parameters for edge formation and dissoluton
+print(fit1$gVal)
+#> [1] 29.25391 15.46345
+# local parameters for edge formation (quartiles)
+print(quantile(fit1$xi))
+#>        0%       25%       50%       75%      100% 
+#> 0.6464154 0.6973152 0.7291594 0.7628517 0.8474749
+# local parameters for edge formation (quartiles)
+print(quantile(fit1$eta))
+#>        0%       25%       50%       75%      100% 
+#> 0.6868115 0.7557358 0.7784754 0.8092884 0.8533644
+
+# note that the same global parameters are shared by the edge formation and dissolution models
+
+# Predict the next two network snapshots
+
+# Specify snapshot to predict from
+Xnew = data1$X[,,n]
+# Prediction with predictNet
+pred1 = predictTransitivity(fit1,Xnew,nStep=2)
+
+# predictTransitivity predicts from the estimated model parameters recursively; that is, after
+# predicting the n+1 snapshot, it plugs those edge probabilities into the model again to predict the
+# n+2 snapshot.
+# The resulting predictions are returned as a p x p x nStep array
 ```
 
 ## Example 2: Persistence Model
@@ -34,14 +80,14 @@ library(arnetworks)
 The package also allows users to specify their own AR network models
 with both local and global parameters. This is a basic example which
 shows how to simulate, estimate and predict with the persistence model
-(see Chang et al. (2024+), Section Y.Y).
+(see Chang et al. (2024+), Section 3.2).
 
 ``` r
 library(arnetworks)
-# Persistence Model
+# Persistence model
 
 # Set model parameters
-p = 30; n = 20
+p = 100; n = 50
 xi = runif(p, 0.5, 0.9)
 eta = runif(p, 0.5, 0.9)
 a = 0.5
@@ -56,7 +102,12 @@ X = data2$X
 statsAlpha =  1-X[,,4:n-2]+ ( 1-X[,,4:n-2])*( 1-X[,,4:n-3])
 statsBeta =  X[,,4:n-2]+ ( X[,,4:n-2])*( X[,,4:n-3])
 X = X[,, 3: n]
-# NOTE: estimation implicitly conditions on the first two network snapshots
+# NOTE: estimation for the persistence model implicitly conditions on the first two network snapshots,
+# so the data used for fitting has n-2 network snapshots
+
+# In general statsAlpha and statsBeta are p x p x d x n' arrays, where d is the dimension of the 
+# sufficient statistic for each edge, and n' is the number of snapshots used for fitting. 
+# In this case d = 1 and n' = n-2 so the array have only 3 dimensions
 
 # Define edge formation and dissolution functions
 fij = function(global, stats) {
@@ -65,6 +116,13 @@ fij = function(global, stats) {
 gij <- function(global, stats) {
   return (exp(-1 -global*stats))
 }
+
+# These functions take the global parameters and sufficient statistics as input and return
+# the global part of the edge growth (fij) and dissolution (gij) probabilities.
+# In this case there is one global parameter governing growth, and one governing dissolution, so
+# both functions take a scalar and an array valued parameter, and return p x p x n' arrays, where
+# n' is the number of snapshots used for fitting.
+
 # Model fitting with estNet
 fit2 <- estNet(X, fij, gij, 
                  statsAlpha, statsBeta, 
@@ -73,18 +131,18 @@ fit2 <- estNet(X, fij, gij,
 
 # global parameter for edge formation
 print(fit2$gAlphaVal)
-#> [1] 0.7964095
+#> [1] 0.7605997
 # global parameter for edge dissolution
 print(fit2$gBetaVal)
-#> [1] 0.7806978
+#> [1] 0.7459231
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$xi))
 #>        0%       25%       50%       75%      100% 
-#> 0.4282513 0.7076076 0.8253161 1.0036155 1.3879133
+#> 0.5827530 0.7682047 0.8817997 0.9469047 1.1739032
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$eta))
 #>        0%       25%       50%       75%      100% 
-#> 0.4111616 0.7799851 0.8964201 0.9683512 1.4531107
+#> 0.5920009 0.7872615 0.8903429 0.9846027 1.2306834
 
 # Predict the next network snapshot
 
@@ -95,4 +153,8 @@ statsAlphaNew =  1-data2$X[,,n-1,drop=FALSE]+ ( 1-data2$X[,,n-1,drop=FALSE])*( 1
 statsBetaNew =  data2$X[,,n-1,drop=FALSE]+ ( data2$X[,,n-1,drop=FALSE])*( data2$X[,,n-2,drop=FALSE])
 # Prediction with predictNet
 pred2 = predictNet(fit2,Xnew,statsAlphaNew,statsBetaNew,fij,gij)
+
+# predictNet uses the same objects as estNet to predict the next network snapshot.
+# Note that Xnew (the final snapshot of the observed network data) is a p x p matrix, while 
+# statsAlphaNew and statsBetaNew are p x p x 1 arrays
 ```
