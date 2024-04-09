@@ -382,7 +382,7 @@ estTransitivity <- function(X,U=NULL,V=NULL,
     }
     # refinement for a,b
     ab2[1] = stats::optim(ab1[1],  globalMLE_refine_a_et,  method = 'L-BFGS-B', al = Al[,1], A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = Uc, V = Vc, ab = ab1, xivec = xiE, etavec = etaE, lower = max(0.01, ab1[1]-rtildeGlob), upper = ab1[1]+rtildeGlob)$par
-    ab2[2] = stats::optim(ab1[2],  globalMLE_refine_b_et,  method = 'L-BFGS-B', al = Al[,2], A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = Uc, V = Vc, ab = ab1, xivec = xiE, etavec = etaE, lower = max(0.01, ab1[2]-rtildeGlob), upper = ab1[2]+rtildeGlob)$par
+    ab2[2] = stats::optim(ab1[2],  globalMLE_refine_b_et,  method = 'L-BFGS-B', al = Al[,2], A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = Uc, V = Vc, ab = ab1, xivec = xiE, etavec = etaE, lower = max(0.01, ab1[2]-rtildeGlob/2), upper = ab1[2]+rtildeGlob/2)$par
     if(verbose){
       cat('Current (a,b):',ab2,'\nDone global parameter refinement',rr,'of',length(rSeqGlob),'\n')
     }
