@@ -190,7 +190,7 @@ estTransitivity <- function(X,U=NULL,V=NULL,
   ab_max <- (400*(p-1)) / max(c(Uc,Vc))
   #ximax_init <- 1
   #etamax_init <- 1
-  maxIter <- 5
+  maxIter <- 10
   tol <- 1e-4
 
   #Rough Initialization:
@@ -258,6 +258,33 @@ estTransitivity <- function(X,U=NULL,V=NULL,
     }
     # additional control for estimation of a,b
     ab_max_est <- min(10*max(ab1),ab_max)
+    
+    for (it in 1:maxIter){
+      ximax = apply((1 +exp(ab1[1]*Uc) + exp(ab1[2]*Vc) )/exp(ab1[1]*Uc),c(1,2),min)
+      etamax =  apply((1 +exp(ab1[2]*Vc) + exp(ab1[1]*Uc) )/exp(ab1[2]*Vc),c(1,2),min)
+      
+      for (i in 1:p){
+        xiE[i] = stats::optim(xiE[i],  localMLE_et,  method = 'L-BFGS-B', Ai = A1[i,-i,] , Bi = B1[i,-i,], Ui = Uc[i,-i,], Vi=Vc[i,-i,], ab=ab1, xivec_ic= xiE[-i], lower  = c(0.01), upper = min(ximax[i,-i]/xiE[-i]))$par
+        etaE[i] = stats::optim(etaE[i],  localMLE_et,  method = 'L-BFGS-B', Ai = A2[i,-i,] , Bi = B2[i,-i,], Ui = Vc[i,-i,], Vi=Uc[i,-i,], ab=c(ab1[2],ab1[1]), xivec_ic= etaE[-i], lower  = c(0.01), upper = min(etamax[i,-i]/etaE[-i]))$par
+      }
+
+      
+      tmp2 = stats::optim(ab1, globalMLE_ab_et, gr = grr_globalMLE_ab_et, method = "L-BFGS-B",
+                          lower = c(tol,tol), upper=rep(ab_max_est,2),
+                          A1 = A1, B1 = B1, A2 = A2, B2 = B2, U = Uc, V = Vc, xivec = xiE, etavec = etaE)
+      ab2 = tmp2$par
+      fn2 = tmp2$value
+      # if(verbose){
+      #   cat('Current (a,b):',ab1,'\nDone initialization iter',it,'\n')
+      # }
+      
+      if(mean(abs(ab2-ab1))<tol | fn1<=fn2) {
+        break
+      }else{
+        ab1 = ab2
+        fn1 = fn2
+      }
+    }
   }else if (length(initXi) != p){
     stop("Error: Length of initXi does not match p.") 
   }else if (length(initEta) != p){

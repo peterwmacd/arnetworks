@@ -254,6 +254,26 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
           fn1 = fn2
         }
       }
+      
+      for (it in 1: maxIter){
+        xiMax = apply(1/fg_array(fij, gAlphaVal.E0, statsAlpha) , c(1,2), min)
+        for (i in 1:p){
+          xiE[i] = stats::optim(xiE[i],  localMLE_i,  method = 'L-BFGS-B', A = A1, B = B1, fg = fij, global = gAlphaVal.E0, stats = statsAlpha, localVec = xiE, i = i, lower  = c(0.01), upper = min(xiMax[i,-i]/xiE[-i]))$par
+        }
+        xiME = outer(xiE,xiE)
+        for (ix in 1:da){
+          tmp2 = stats::optim(gAlphaVal.E0[ix], globalMLE, method = "L-BFGS-B", lower = c(0.01), ix = ix, A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateAlpha = TRUE)
+          gAlphaVal.E[ix] = tmp2$par
+        }
+        fn2 = - logl_part(A1, B1, fij, gAlphaVal.E, statsAlpha, xiME)
+        
+        if(mean(abs(gAlphaVal.E - gAlphaVal.E0))<tol| fn1<=fn2) {
+          break
+        }else{
+          gAlphaVal.E0 = gAlphaVal.E
+          fn1 = fn2
+        }
+      }
 
 
       for (ix in 1:db){
@@ -264,10 +284,10 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
       fn1 = - logl_part(A2, B2, gij, gBetaVal.E0, statsBeta, etaME)
 
       for (it in 1: maxIter){
-        etamax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2),min)
+        etaMax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2),min)
         for (i in 1:(p-1)){
           for (j in (i+1):p){
-            etaij = stats::optim(etaME[i,j], localMLE, method = 'L-BFGS-B', Aij = A2[i,j,], Bij = B2[i,j,], fg = gij, global = gBetaVal.E0, stats = statsBeta[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(etamax[i,j]))$par
+            etaij = stats::optim(etaME[i,j], localMLE, method = 'L-BFGS-B', Aij = A2[i,j,], Bij = B2[i,j,], fg = gij, global = gBetaVal.E0, stats = statsBeta[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(etaMax[i,j]))$par
             etaME[j,i] = etaME[i,j] = etaij
           }
         }
@@ -283,6 +303,30 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
         fn2 = - logl_part(A2, B2, gij, gBetaVal.E, statsBeta, etaME)
 
 
+        if(mean(abs(gBetaVal.E - gBetaVal.E0))<tol| fn1<=fn2) {
+          break
+        }else{
+          gBetaVal.E0 = gBetaVal.E
+          fn1 = fn2
+        }
+      }
+      
+      for (it in 1: maxIter){
+        etaMax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2),min)
+        
+        for (i in 1:p){
+          etaE[i] = stats::optim(etaE[i],  localMLE_i,  method = 'L-BFGS-B', A = A2, B = B2, fg = gij, global = gBetaVal.E0, stats = statsBeta, localVec = etaE, i = i, lower  = c(0.01), upper = min(etaMax[i,-i]/etaE[-i]))$par
+        }
+        etaME = outer(etaE,etaE)
+        
+        for (ix in 1:db){
+          tmp2 = stats::optim(gBetaVal.E0[ix], globalMLE, method = "L-BFGS-B", lower = c(0.01), ix = ix, A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateAlpha = F)
+          gBetaVal.E[ix] = tmp2$par
+        }
+        
+        fn2 = - logl_part(A2, B2, gij, gBetaVal.E, statsBeta, etaME)
+        
+        
         if(mean(abs(gBetaVal.E - gBetaVal.E0))<tol| fn1<=fn2) {
           break
         }else{
@@ -319,13 +363,13 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
 
     for (it in 1: maxIter){
       xiMax = apply(1/fg_array(fij, gAlphaVal.E0, statsAlpha) , c(1,2), min)
-      etamax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2), min)
+      etaMax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2), min)
       for (i in 1:(p-1)){
         for (j in (i+1):p){
           xiij = stats::optim(xiME[i,j], localMLE, method = 'L-BFGS-B', Aij = A1[i, j,], Bij = B1[i,j,], fg = fij, global = gAlphaVal.E0, stats = statsAlpha[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(xiMax[i,j]))$par
           xiME[j,i] = xiME[i,j] = xiij
 
-          etaij = stats::optim(etaME[i,j], localMLE, method = 'L-BFGS-B', Aij = A2[i,j,], Bij = B2[i,j,], fg = gij, global = gBetaVal.E0, stats = statsBeta[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(etamax[i,j]))$par
+          etaij = stats::optim(etaME[i,j], localMLE, method = 'L-BFGS-B', Aij = A2[i,j,], Bij = B2[i,j,], fg = gij, global = gBetaVal.E0, stats = statsBeta[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(etaMax[i,j]))$par
           etaME[j,i] = etaME[i,j] = etaij
         }
       }
@@ -360,6 +404,52 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
       fn2 = - logl(A1, B1, A2, B2, fij, gAlphaVal.E, statsAlpha, xiME, gij, gBetaVal.E, statsBeta, etaME)
 
 
+      if(mean(abs(gAlphaVal.E - gAlphaVal.E0)) + mean(abs(gBetaVal.E - gBetaVal.E0))<tol| fn1<=fn2) {
+        break
+      }else{
+        gAlphaVal.E0 = gAlphaVal.E
+        gBetaVal.E0 = gBetaVal.E
+        fn1 = fn2
+      }
+    }
+    
+    for (it in 1: maxIter){
+      xiMax = apply(1/fg_array(fij, gAlphaVal.E0, statsAlpha) , c(1,2), min)
+      etaMax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2), min)
+      for (i in 1:p){
+        xiE[i] = stats::optim(xiE[i],  localMLE_i,  method = 'L-BFGS-B', A = A1, B = B1, fg = fij, global = gAlphaVal.E0, stats = statsAlpha, localVec = xiE, i = i, lower  = c(0.01), upper = min(xiMax[i,-i]/xiE[-i]))$par
+        etaE[i] = stats::optim(etaE[i],  localMLE_i,  method = 'L-BFGS-B', A = A2, B = B2, fg = gij, global = gBetaVal.E0, stats = statsBeta, localVec = etaE, i = i, lower  = c(0.01), upper = min(etaMax[i,-i]/etaE[-i]))$par
+      }
+      
+
+      xiME = tcrossprod(xiE)
+      etaME = tcrossprod(etaE)
+      
+      if ( shrGPrm>0){
+        for (ix in 1:shrGPrm){
+          tmp2 = stats::optim(gAlphaVal.E0[ix], globalMLE, method = "L-BFGS-B", lower = c(0.01), ix = ix, A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateAlpha = TRUE)
+          gAlphaVal.E[ix] = gBetaVal.E[ix] = tmp2$par
+        }
+      }
+      
+      if (da > shrGPrm){
+        for (ix in (shrGPrm + 1):length(gAlphaVal.E0)){
+          tmp2 = stats::optim(gAlphaVal.E0[ix], globalMLE, method = "L-BFGS-B", lower = c(0.01), ix = ix, A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateAlpha = TRUE)
+          gAlphaVal.E[ix] =  tmp2$par
+        }
+      }
+      
+      if (db > shrGPrm){
+        for (ix in (shrGPrm + 1):length(gBetaVal.E0)){
+          tmp2 = stats::optim(gBetaVal.E0[ix], globalMLE, method = "L-BFGS-B", lower = c(0.01), ix = ix, A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateAlpha = F)
+          gBetaVal.E[ix] =  tmp2$par
+        }
+      }
+      
+      
+      fn2 = - logl(A1, B1, A2, B2, fij, gAlphaVal.E, statsAlpha, xiME, gij, gBetaVal.E, statsBeta, etaME)
+      
+      
       if(mean(abs(gAlphaVal.E - gAlphaVal.E0)) + mean(abs(gBetaVal.E - gBetaVal.E0))<tol| fn1<=fn2) {
         break
       }else{
@@ -407,6 +497,26 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
           fn1 = fn2
         }
       }
+      
+      for (it in 1: maxIter){
+        xiMax = apply(1/fg_array(fij, gAlphaVal.E0, statsAlpha) , c(1,2), min)
+        for (i in 1:p){
+          xiE[i] = stats::optim(xiE[i],  localMLE_i,  method = 'L-BFGS-B', A = A1, B = B1, fg = fij, global = gAlphaVal.E0, stats = statsAlpha, localVec = xiE, i = i, lower  = c(0.01), upper = min(xiMax[i,-i]/xiE[-i]))$par
+        }
+        xiME = outer(xiE,xiE)
+        for (ix in 1:da){
+          tmp2 = stats::optim(gAlphaVal.E0, globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,da), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare= F,updateAlpha = TRUE)
+          gAlphaVal.E = tmp2$par
+        }
+        fn2 = - logl_part(A1, B1, fij, gAlphaVal.E, statsAlpha, xiME)
+        
+        if(mean(abs(gAlphaVal.E - gAlphaVal.E0))<tol| fn1<=fn2) {
+          break
+        }else{
+          gAlphaVal.E0 = gAlphaVal.E
+          fn1 = fn2
+        }
+      }
 
 
       for (ix in 1:db){
@@ -417,10 +527,10 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
       fn1 = - logl_part(A2, B2, gij, gBetaVal.E0, statsBeta, etaME)
 
       for (it in 1: maxIter){
-        etamax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2),min)
+        etaMax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2),min)
         for (i in 1:(p-1)){
           for (j in (i+1):p){
-            etaij = stats::optim(etaME[i,j], localMLE, method = 'L-BFGS-B', Aij = A2[i,j,], Bij = B2[i,j,], fg = gij, global = gBetaVal.E0, stats = statsBeta[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(etamax[i,j]))$par
+            etaij = stats::optim(etaME[i,j], localMLE, method = 'L-BFGS-B', Aij = A2[i,j,], Bij = B2[i,j,], fg = gij, global = gBetaVal.E0, stats = statsBeta[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(etaMax[i,j]))$par
             etaME[j,i] = etaME[i,j] = etaij
           }
         }
@@ -437,6 +547,30 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
 
 
         if(mean(abs(gBetaVal.E -gBetaVal.E0))<tol| fn1<=fn2) {
+          break
+        }else{
+          gBetaVal.E0 = gBetaVal.E
+          fn1 = fn2
+        }
+      }
+      
+      for (it in 1: maxIter){
+        etaMax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2),min)
+        
+        for (i in 1:p){
+          etaE[i] = stats::optim(etaE[i],  localMLE_i,  method = 'L-BFGS-B', A = A2, B = B2, fg = gij, global = gBetaVal.E0, stats = statsBeta, localVec = etaE, i = i, lower  = c(0.01), upper = min(etaMax[i,-i]/etaE[-i]))$par
+        }
+        etaME = outer(etaE,etaE)
+        
+        for (ix in 1:db){
+          tmp2 = stats::optim(gBetaVal.E0, globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,db),  A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = F, updateAlpha = F)
+          gBetaVal.E = tmp2$par
+        }
+        
+        fn2 = - logl_part(A2, B2, gij, gBetaVal.E, statsBeta, etaME)
+        
+        
+        if(mean(abs(gBetaVal.E - gBetaVal.E0))<tol| fn1<=fn2) {
           break
         }else{
           gBetaVal.E0 = gBetaVal.E
@@ -467,13 +601,13 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
 
     for (it in 1: maxIter){
       xiMax = apply(1/fg_array(fij, gAlphaVal.E0, statsAlpha) , c(1,2),min)
-      etamax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2),min)
+      etaMax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2),min)
       for (i in 1:(p-1)){
         for (j in (i+1):p){
           xiij = stats::optim(xiME[i,j], localMLE, method = 'L-BFGS-B', Aij = A1[i, j,], Bij = B1[i,j,], fg = fij, global = gAlphaVal.E0, stats = statsAlpha[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(xiMax[i,j]))$par
           xiME[j,i] = xiME[i,j] = xiij
 
-          etaij = stats::optim(etaME[i,j], localMLE, method = 'L-BFGS-B', Aij = A2[i,j,], Bij = B2[i,j,], fg = gij, global = gBetaVal.E0, stats = statsBeta[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(etamax[i,j]))$par
+          etaij = stats::optim(etaME[i,j], localMLE, method = 'L-BFGS-B', Aij = A2[i,j,], Bij = B2[i,j,], fg = gij, global = gBetaVal.E0, stats = statsBeta[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(etaMax[i,j]))$par
           etaME[j,i] = etaME[i,j] = etaij
         }
       }
@@ -501,6 +635,44 @@ estNet = function(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBet
       fn2 = - logl(A1, B1, A2, B2, fij, gAlphaVal.E, statsAlpha, xiME, gij, gBetaVal.E, statsBeta, etaME)
 
 
+      if(mean(abs(gAlphaVal.E - gAlphaVal.E0)) + mean(abs(gBetaVal.E - gBetaVal.E0))<tol| fn1<=fn2) {
+        break
+      }else{
+        gAlphaVal.E0 = gAlphaVal.E
+        gBetaVal.E0 = gBetaVal.E
+        fn1 = fn2
+      }
+    }
+    
+    for (it in 1: maxIter){
+      xiMax = apply(1/fg_array(fij, gAlphaVal.E0, statsAlpha) , c(1,2), min)
+      etaMax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2), min)
+      for (i in 1:p){
+        xiE[i] = stats::optim(xiE[i],  localMLE_i,  method = 'L-BFGS-B', A = A1, B = B1, fg = fij, global = gAlphaVal.E0, stats = statsAlpha, localVec = xiE, i = i, lower  = c(0.01), upper = min(xiMax[i,-i]/xiE[-i]))$par
+        etaE[i] = stats::optim(etaE[i],  localMLE_i,  method = 'L-BFGS-B', A = A2, B = B2, fg = gij, global = gBetaVal.E0, stats = statsBeta, localVec = etaE, i = i, lower  = c(0.01), upper = min(etaMax[i,-i]/etaE[-i]))$par
+      }
+      
+      xiME = tcrossprod(xiE)
+      etaME = tcrossprod(etaE)
+      
+      if ( shrGPrm>0){
+        tmp0 = stats::optim(gAlphaVal.E0[1:shrGPrm], globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,shrGPrm), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = T,updateAlpha = TRUE)
+        gAlphaVal.E[1:shrGPrm] = gBetaVal.E[1:shrGPrm] = tmp0$par
+      }
+      
+      if (da > shrGPrm){
+        tmp0 = stats::optim(gAlphaVal.E0[(shrGPrm + 1):da], globalMLE_group, method = "L-BFGS-B", lower = rep(0.01, da-shrGPrm), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = F, updateAlpha = TRUE)
+        gAlphaVal.E[(shrGPrm + 1):da] =  tmp0$par
+      }
+      
+      if (db > shrGPrm){
+        tmp0 = stats::optim(gBetaVal.E0[(shrGPrm + 1):db], globalMLE_group, method = "L-BFGS-B", lower = rep(0.01, db-shrGPrm), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = F, updateAlpha = F)
+        gBetaVal.E[(shrGPrm + 1):db] =  tmp0$par
+      }
+      
+      fn2 = - logl(A1, B1, A2, B2, fij, gAlphaVal.E, statsAlpha, xiME, gij, gBetaVal.E, statsBeta, etaME)
+      
+      
       if(mean(abs(gAlphaVal.E - gAlphaVal.E0)) + mean(abs(gBetaVal.E - gBetaVal.E0))<tol| fn1<=fn2) {
         break
       }else{

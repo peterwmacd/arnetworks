@@ -41,6 +41,18 @@ logl_local = function(Aij, Bij, fg, global, statsij, localij){
   return(res)
 }
 
+### 1.3  local log likelihood function for each (i,j)
+logl_locali = function(A, B, fg, global, stats, localVec, i){
+  dm = dim(stats)
+  p = dm[1]
+  n = dm[3]
+  
+  tmp = array(fg(global, stats[i,,,,drop = FALSE]),dim = c(p,n))
+  tmp =  localVec[i]*localVec[-i]*tmp[-i,]
+  res =  sum(A[i,-i,]*logadj(tmp) + B[i,-i,]*logadj(1-tmp))
+  return(res)
+}
+
 
 
 
@@ -100,6 +112,13 @@ locEst = function(locMatE){
   locE = exp(tmp$par)
 
   return(locE)
+}
+
+### 2.3  Local log likelihood function for xi_i and eta_i
+localMLE_i = function(par, A, B, fg, global, stats, localVec, i){
+  localVec[i] = par
+  res = - logl_locali(A, B, fg, global, stats, localVec, i)
+  res
 }
 
 
