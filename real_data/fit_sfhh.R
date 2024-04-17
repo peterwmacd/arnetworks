@@ -5,9 +5,10 @@ library(devtools)
 library(pROC)
 library(latex2exp)
 # source code
-# load_all()
-source('Functions.R')
-source('Estim.R')
+load_all()
+source('realdataFunctions.R')
+# source('Functions.R')
+# source('Estim.R')
 
 # colorblind palete
 cbp <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
@@ -17,12 +18,13 @@ X_sfhh <- readRDS('data/X_sfhh.rds')
 p <- dim(X_sfhh)[1]
 n <- dim(X_sfhh)[3]
 # transitivity statistics
-UV_sfhh <- transitivity_stats(X_sfhh)
+UV_sfhh <- arnetworks::statsTransitivity(X_sfhh)
 # mean(U) ~ 0.08, 95% of entries are zero
 # mean(V) ~ 2.2, 26% of entries are zero (still quite small, perhaps shows more
 # modularity?)
 
-fit_sfhh <- estim_transitivity(X_sfhh,verbose=TRUE)
+fit_sfhh6 <- arnetworks::estTransitivity(X_sfhh,verbose=TRUE)
+                                        #initXi=rep(1,p),initEta=rep(1,p))
 # save fitted model
 saveRDS(fit_sfhh,file='data/fit_sfhh.rds')
 
@@ -35,10 +37,10 @@ fit_sfhh <- readRDS('data/fit_sfhh.rds')
 
 # histogram of fitted thetas and etas
 pdf(file='fit_plots_sfhh/theta_hist_sfhh.pdf')
-hist(fit_sfhh$theta,20,
+hist(fit_sfhh$xi,20,
      main=TeX('Histogram of $\\{ \\hat{\\xi}_i \\}_{i=1}^{200}$'),
      xlab='',col=cbp[3],xlim=c(0,1),cex.main=1.8,cex.lab=1.3)
-abline(v=mean(fit_sfhh$theta),lty=2)
+abline(v=mean(fit_sfhh$xi),lty=2)
 dev.off()
 # generally small (mean 0.18) with a long right tail
 
@@ -53,10 +55,10 @@ dev.off()
 # xy plot of fitted thetas and etas
 pdf(file='fit_plots_sfhh/theta_scatter_sfhh.pdf')
 par(mar=c(4,5.5,2,2))
-plot(fit_sfhh$theta,fit_sfhh$eta,
+plot(fit_sfhh$xi,fit_sfhh$eta,
      main='',xlab=TeX('$\\hat{\\xi}_i$'),ylab=TeX('$\\hat{\\eta}_i$'),
      xlim=c(0,1),ylim=c(.8,1.4),cex.lab=2)
-abline(lm(fit_sfhh$eta~fit_sfhh$theta),lty=2)
+abline(lm(fit_sfhh$eta~fit_sfhh$xi),lty=2)
 dev.off()
 # weak negative relationship, implies forming more edges has
 # little effect on the dissolution, but if anything forming more edge makes one

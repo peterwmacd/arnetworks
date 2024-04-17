@@ -5,18 +5,17 @@ library(devtools)
 library(pROC)
 library(latex2exp)
 # source code
-# load_all()
-source('Functions.R')
-source('Estim.R')
+load_all()
+source('realdataFunctions.R')
+#source('Functions.R')
+#source('Estim.R')
 
 # manufacturing network
 X_man <- readRDS('data/X_man.rds')
 p <- dim(X_man)[1]
 n <- dim(X_man)[3]
 # transitivity statistics
-UV_man <- transitivity_stats(X_man)
-# mean(U) ~ 1.42, 42% of entries 0
-# mean(V) ~ 8, 1% of entries 0
+# UV_man <- arnetworks::statsTransitivity(X_man)
 
 # fit_man <- estim_transitivity(X_man,verbose=TRUE)
 # # save fitted model
@@ -25,73 +24,77 @@ UV_man <- transitivity_stats(X_man)
 # splitting into two regimes for fitting
 # first regime snapshots 1 to 13
 X_man1 <- X_man[,,1:13]
+UV_man1 <- arnetworks::statsTransitivity(X_man1)
 n1 <- dim(X_man1)[3]
-UV_man1 <- transitivity_stats(X_man1)
-
-fit_man1 <- estim_transitivity(X_man1,verbose=TRUE)
-
-# compare to package version
-#fit_man1A <- estTransitivity(X_man1,verbose=TRUE)
-
+fit_man1 <- arnetworks::estTransitivity(X_man1,verbose=TRUE)
 # save fitted model
 saveRDS(fit_man1,file='data/fit_man1.rds')
 
 # second regime snapshots 14 to 39
 X_man2 <- X_man[,,14:39]
+UV_man2 <- arnetworks::statsTransitivity(X_man2)
 n2 <- dim(X_man2)[3]
-UV_man2 <- transitivity_stats(X_man2)
-
-fit_man2 <- estim_transitivity(X_man2,verbose=TRUE)
+fit_man2 <- arnetworks::estTransitivity(X_man2,verbose=TRUE)
 # save fitted model
 saveRDS(fit_man2,file='data/fit_man2.rds')
 
 #### Model interpretation ####
 
 # load models
-fit_man <- readRDS('data/fit_man.rds')
+# fit_man <- readRDS('data/fit_man.rds')
 fit_man1 <- readRDS('data/fit_man1.rds')
 fit_man2 <- readRDS('data/fit_man2.rds')
 
 # first regime
 
-print(c(fit_man1$a,fit_man1$b))
+# global parameters
+print(c(fit_man1$gVal))
 # a is larger (slightly, but entries of V are generally larger); not as
 # extreme as the other dataset
 
-# histogram of fitted thetas and etas
-pdf(file='fit_plots_man/theta_hist_man1.pdf')
-hist(fit_man$theta,20,
-     main='Histogram of theta-hat, regime 1',xlab='',col='blue')
-abline(v=mean(fit_man$theta),lty=2)
-dev.off()
-# quite dispersed, mean around 0.5
+# local parameter summaries
+print(mean(fit_man1$xi))
+print(mean(fit_man1$eta))
 
-pdf(file='fit_plots_man/eta_hist_man1.pdf')
-hist(fit_man$eta,20,
-     main='Histogram of eta-hat, regime 1',xlab='',col='red')
-abline(v=mean(fit_man$eta),lty=2)
-dev.off()
-# less dispersed, mean around 0.9
+# histogram of fitted thetas and etas
+# pdf(file='fit_plots_man/theta_hist_man1.pdf')
+# hist(fit_man$theta,20,
+#      main='Histogram of theta-hat, regime 1',xlab='',col='blue')
+# abline(v=mean(fit_man$theta),lty=2)
+# dev.off()
+# # quite dispersed, mean around 0.5
+#
+# pdf(file='fit_plots_man/eta_hist_man1.pdf')
+# hist(fit_man$eta,20,
+#      main='Histogram of eta-hat, regime 1',xlab='',col='red')
+# abline(v=mean(fit_man$eta),lty=2)
+# dev.off()
+# # less dispersed, mean around 0.9
 
 # second regime
 
-print(c(fit_man2$a,fit_man2$b))
+# global parameters
+print(c(fit_man2$gVal))
 # a is larger (slightly, but entries of V are generally larger); not as
 # extreme as the other dataset
 
-# histogram of fitted thetas and etas
-pdf(file='fit_plots_man/theta_hist_man2.pdf')
-hist(fit_man2$theta,20,
-     main='Histogram of theta-hat, regime 2',xlab='',col='blue')
-abline(v=mean(fit_man2$theta),lty=2)
-dev.off()
-# quite dispersed, mean around 0.5
+# local parameter summaries
+print(mean(fit_man2$xi))
+print(mean(fit_man2$eta))
 
-pdf(file='fit_plots_man/eta_hist_man2.pdf')
-hist(fit_man2$eta,20,
-     main='Histogram of eta-hat, regime 2',xlab='',col='red')
-abline(v=mean(fit_man2$eta),lty=2)
-dev.off()
+# histogram of fitted thetas and etas
+# pdf(file='fit_plots_man/theta_hist_man2.pdf')
+# hist(fit_man2$theta,20,
+#      main='Histogram of theta-hat, regime 2',xlab='',col='blue')
+# abline(v=mean(fit_man2$theta),lty=2)
+# dev.off()
+# # quite dispersed, mean around 0.5
+#
+# pdf(file='fit_plots_man/eta_hist_man2.pdf')
+# hist(fit_man2$eta,20,
+#      main='Histogram of eta-hat, regime 2',xlab='',col='red')
+# abline(v=mean(fit_man2$eta),lty=2)
+# dev.off()
 # less dispersed, mean around 0.9
 
 #### analysis against metadata ####
@@ -101,27 +104,33 @@ print(table(levels))
 
 # first regime
 
-# same scatter plot of theta and eta parameters for different hierarchical levels
+# scatter plot of theta and eta parameters for different hierarchical levels
 pdf(file='fit_plots_man/theta_scatter_man1.pdf')
 par(mar=c(4,5.5,4,4))
-plot(fit_man1$theta,fit_man1$eta,
+plot(fit_man1$xi,fit_man1$eta,
      main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
      xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8)
-abline(lm(fit_man1$eta~fit_man1$theta),lty=2)
+abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
 dev.off()
+
+# means of xi-hat for managers and non-managers
+print(mean(fit_man1$xi[levels==1]))
+print(mean(fit_man1$xi[levels>1]))
 
 # second regime
 
-# same scatter plot of theta and eta parameters for different hierarchical levels
+# scatter plot of theta and eta parameters for different hierarchical levels
 pdf(file='fit_plots_man/theta_scatter_man2.pdf')
 par(mar=c(4,5.5,4,4))
-plot(fit_man2$theta,fit_man2$eta,
+plot(fit_man2$xi,fit_man2$eta,
      main='Period 2',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
      xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8)
-abline(lm(fit_man2$eta~fit_man2$theta),lty=2)
+abline(lm(fit_man2$eta~fit_man2$xi),lty=2)
 dev.off()
 
-# no particularly strange behavior for CEO or others high in the hierarchy
+# means of xi-hat for managers and non-managers
+print(mean(fit_man2$xi[levels==1]))
+print(mean(fit_man2$xi[levels>1]))
 
 #### link prediction ####
 
@@ -142,13 +151,15 @@ n_train <- 10:23
 fit_man_reduce <- fit_man_simple <- fit_man_edge <- fit_man_edgemod <- list()
 length(fit_man_reduce) <- length(fit_man_simple) <- length(fit_man_edge) <- length(n_train)
 for(i in 1:length(n_train)){
-  fit_man_reduce[[i]] <- estim_transitivity(X_man2[,,1:n_train[i]],verbose=TRUE)
+  fit_man_reduce[[i]] <- arnetworks::estTransitivity(X_man2[,,1:n_train[i]],verbose=FALSE)
   fit_man_simple[[i]] <- simple_ar_fit(X_man2[,,1:n_train[i]])
   fit_man_edge[[i]] <- edge_ar_fit(X_man2[,,1:n_train[i]])
   fit_man_edgemod[[i]] <- edge_ar_fit_modified(X_man2[,,1:n_train[i]])
+  print(paste0('models ',i,' of ',length(n_train)))
 }
+# runs in ~45 minutes
 
-# temp
+# temporary code to update just one list
 # fit_man_edgemod <- list()
 # for(i in 1:length(n_train)){
 #   fit_man_edgemod[[i]] <- edge_ar_fit_modified(X_man2[,,1:n_train[i]])
@@ -181,7 +192,8 @@ for(i in 1:length(n_train)){
   eigXmean <- eigen(Xmean)
   pred_stationary <- eigXmean$values[1]*tcrossprod(eigXmean$vectors[,1])
   # model probabilities
-  pred_model <- model_predict(3,fit_man_reduce[[i]],X_man2[,,n_train[i]])
+  pred_model <- arnetworks::predictTransitivity(fit_man_reduce[[i]],X_man2[,,n_train[i]],nStep=3)
+  #pred_model <- model_predict(3,fit_man_reduce[[i]],X_man2[,,n_train[i]])
   # simple AR probabilities
   pred_simple <- simple_ar_predict(3,fit_man_simple[[i]],X_man2[,,n_train[i]])
   # edgewise AR probabilities
