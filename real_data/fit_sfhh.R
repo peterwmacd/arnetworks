@@ -23,8 +23,8 @@ UV_sfhh <- arnetworks::statsTransitivity(X_sfhh)
 # mean(V) ~ 2.2, 26% of entries are zero (still quite small, perhaps shows more
 # modularity?)
 
-fit_sfhh6 <- arnetworks::estTransitivity(X_sfhh,verbose=TRUE)
-                                        #initXi=rep(1,p),initEta=rep(1,p))
+fit_sfhh <- arnetworks::estTransitivity(X_sfhh,verbose=TRUE)
+
 # save fitted model
 saveRDS(fit_sfhh,file='data/fit_sfhh.rds')
 
@@ -33,7 +33,16 @@ saveRDS(fit_sfhh,file='data/fit_sfhh.rds')
 # load model
 fit_sfhh <- readRDS('data/fit_sfhh.rds')
 
-# b is larger, as are the entries of V
+# estimates of a,b
+print(fit_sfhh$gVal)
+
+# means of xi, eta
+print(mean(fit_sfhh$xi))
+print(mean(fit_sfhh$eta))
+
+# ranges of xi, eta
+print(quantile(fit_sfhh$xi))
+print(quantile(fit_sfhh$eta))
 
 # histogram of fitted thetas and etas
 pdf(file='fit_plots_sfhh/theta_hist_sfhh.pdf')
