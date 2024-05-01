@@ -10,6 +10,9 @@ source('realdataFunctions.R')
 #source('Functions.R')
 #source('Estim.R')
 
+# black and white indicator for plots
+bw <- FALSE
+
 # manufacturing network
 X_man <- readRDS('data/X_man.rds')
 p <- dim(X_man)[1]
@@ -105,13 +108,25 @@ print(table(levels))
 # first regime
 
 # scatter plot of theta and eta parameters for different hierarchical levels
-pdf(file='fit_plots_man/theta_scatter_man1.pdf')
-par(mar=c(4,5.5,4,4))
-plot(fit_man1$xi,fit_man1$eta,
-     main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-     xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8)
-abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
-dev.off()
+if(bw){
+  pchvec <- c(1,0,6,NA,2,5)
+
+  pdf(file='fit_plots_man/theta_scatter_man1_bw.pdf')
+  par(mar=c(4,5.5,4,4))
+  plot(fit_man1$xi,fit_man1$eta,
+       main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
+       xlim=c(0,1.5),ylim=c(0,1.5),cex=.8*levels,pch=pchvec[levels],cex.lab=1.8,cex.main=1.5)
+  abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
+  dev.off()
+} else{
+  pdf(file='fit_plots_man/theta_scatter_man1.pdf')
+  par(mar=c(4,5.5,4,4))
+  plot(fit_man1$xi,fit_man1$eta,
+       main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
+       xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8,cex.main=1.5)
+  abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
+  dev.off()
+}
 
 # means of xi-hat for managers and non-managers
 print(mean(fit_man1$xi[levels==1]))
@@ -120,13 +135,25 @@ print(mean(fit_man1$xi[levels>1]))
 # second regime
 
 # scatter plot of theta and eta parameters for different hierarchical levels
-pdf(file='fit_plots_man/theta_scatter_man2.pdf')
-par(mar=c(4,5.5,4,4))
-plot(fit_man2$xi,fit_man2$eta,
-     main='Period 2',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-     xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8)
-abline(lm(fit_man2$eta~fit_man2$xi),lty=2)
-dev.off()
+if(bw){
+  pchvec <- c(1,0,6,NA,2,5)
+
+  pdf(file='fit_plots_man/theta_scatter_man2_bw.pdf')
+  par(mar=c(4,5.5,4,4))
+  plot(fit_man2$xi,fit_man2$eta,
+       main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
+       xlim=c(0,1.5),ylim=c(0,1.5),cex=.8*levels,pch=pchvec[levels],cex.lab=1.8,cex.main=1.5)
+  abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
+  dev.off()
+} else{
+  pdf(file='fit_plots_man/theta_scatter_man2.pdf')
+  par(mar=c(4,5.5,4,4))
+  plot(fit_man2$xi,fit_man2$eta,
+       main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
+       xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8,cex.main=1.5)
+  abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
+  dev.off()
+}
 
 # means of xi-hat for managers and non-managers
 print(mean(fit_man2$xi[levels==1]))
@@ -220,7 +247,41 @@ for(i in 1:length(n_train)){
 # colorblind palete
 cbp <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-for(n_out in 1:3){
+if(bw){
+  for(n_out in 1:3){
+    pdf(paste0('fit_plots_man/roc_curves_man2_hor',n_out,'_bw.pdf'),width=6,height=6)
+    par(mfrow=c(1,1))
+    temp <- roc(response=response_combined[[n_out]],predictor=pred_degree_combined[[n_out]])
+    plot(temp,lty=1,lwd=1.5,col='darkgrey',
+         main=TeX(paste0('ROC, $n_{{step}}=',n_out,'$')),
+         cex.lab=1.5,cex.main=1.5)
+    # ROC for model-based prediction
+    temp2 <- roc(response=response_combined[[n_out]],predictor=pred_model_combined[[n_out]])
+    plot(temp2,lty=1,add=TRUE)
+    # ROC for edge means
+    temp3 <- roc(response=response_combined[[n_out]],predictor=pred_mean_combined[[n_out]])
+    plot(temp3,lty=2,add=TRUE)
+    # ROC for simple AR model
+    temp4 <- roc(response=response_combined[[n_out]],predictor=pred_simple_combined[[n_out]])
+    plot(temp4,lty=4,add=TRUE)
+    # ROC for edgewise AR model
+    temp5 <- roc(response=response_combined[[n_out]],predictor=pred_edgear_combined[[n_out]])
+    plot(temp5,lty=3,add=TRUE)
+    # calculate point for naive one-step
+    naive_class <- pred_naive_combined[[n_out]]
+    fpr <- naive_class[2,1]/(naive_class[2,1] + naive_class[1,1])
+    tpr <- naive_class[2,2]/(naive_class[2,2] + naive_class[1,2])
+    points(1-fpr,tpr,col=cbp[1],pch=15,cex=1.2)
+    # legend
+    if(n_out==1){
+      legend(x=.585,y=.42,ncol=1,cex=1.2,lwd=2,
+             legend=c('Transitivity model','Global AR model','Edgewise AR model', 'Degree mean model','Edgewise mean model','Previous edge'),
+             lty=c(1,4,3,1,2,NA),pch=c(NA,NA,NA,NA,NA,15),col=c(1,1,1,'darkgrey',1,1),pt.lwd=c(1,1,1,1.5,1,1))
+    }
+    dev.off()
+  }
+} else{
+  for(n_out in 1:3){
     pdf(paste0('fit_plots_man/roc_curves_man2_hor',n_out,'.pdf'),width=6,height=6)
     par(mfrow=c(1,1))
     temp <- roc(response=response_combined[[n_out]],predictor=pred_degree_combined[[n_out]])
@@ -246,11 +307,12 @@ for(n_out in 1:3){
     points(1-fpr,tpr,col=cbp[1],pch=15,cex=1.2)
     # legend
     if(n_out==1){
-    legend(x=.585,y=.42,ncol=1,cex=1.2,lwd=2,
-           legend=c('Transitivity model','Global AR model','Edgewise AR model', 'Degree mean model','Edgewise mean model','Previous edge'),
-           lty=c(1,1,1,1,1,NA),pch=c(NA,NA,NA,NA,NA,15),col=cbp[c(2,4,6,3,7,1)])
+      legend(x=.585,y=.42,ncol=1,cex=1.2,lwd=2,
+             legend=c('Transitivity model','Global AR model','Edgewise AR model', 'Degree mean model','Edgewise mean model','Previous edge'),
+             lty=c(1,1,1,1,1,NA),pch=c(NA,NA,NA,NA,NA,15),col=cbp[c(2,4,6,3,7,1)])
     }
     dev.off()
+  }
 }
 
 ######
@@ -268,11 +330,11 @@ n1_bic <- (n1-1)*choose(p,2)
 
 ics1 <- matrix(NA,6,2)
 rownames(ics1) <- c('Transitivity AR model',
-                   'Global AR model',
-                   'Edge-wise AR model',
-                   'Edge-wise mean model',
-                   'Degree parameter mean model',
-                   'Global mean model')
+                    'Global AR model',
+                    'Edge-wise AR model',
+                    'Edge-wise mean model',
+                    'Degree parameter mean model',
+                    'Global mean model')
 colnames(ics1) <- c('AIC','BIC')
 
 # 1. Transitivity AR model

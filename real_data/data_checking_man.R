@@ -9,6 +9,9 @@ hollowize <- function(M){
 # colorblind palete
 cbp <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
+# black and white indicator
+bw <- FALSE
+
 #### importing data ####
 setwd('~/packages/arnetworks/real_data/')
 
@@ -92,10 +95,10 @@ grow <- X_raw[,,-1]*(1 - X_raw[,,-n])
 diss <- X_raw[,,-n]*(1 - X_raw[,,-1])
 dynamic_count <- apply(grow+diss,1,sum)
 
-pdf('data_plots_man/man_nodehetraw.pdf',width=7,height=5)
-hist(dynamic_count,40,
-     main='Total dynamic activity by node (raw data)')
-dev.off()
+# pdf('data_plots_man/man_nodehetraw.pdf',width=7,height=5)
+# hist(dynamic_count,40,
+#      main='Total dynamic activity by node (raw data)')
+# dev.off()
 
 node_keep <- which(dynamic_count >= dynamic_thresh)
 X <- X_raw[node_keep,node_keep,]
@@ -117,34 +120,60 @@ dens <- apply(X,3,mean)
 
 pdf('data_plots_man/man_dens.pdf',width=7,height=5)
 plot(dens,type='b',main='Edge density',
-     ylab='Edge density',xlab='')
+     ylab='Edge density',xlab='Week',cex.main=1.5,cex.lab=1.4)
 dev.off()
 
 # scaled growing/dissolving
 grt <- apply(grow_sub,3,sum)/p
 dst <- apply(diss_sub,3,sum)/p
 
-pdf('data_plots_man/man_grds.pdf',width=7,height=5)
-plot(grt,type='b',col=cbp[3],main='Dynamic activity',
-     ylim=c(0,max(grt)+1),ylab='Grown or dissolved edges / nNodes')
-lines(dst,type='b',col=cbp[7])
-abline(h=mean(grt),col=cbp[3],lty=3)
-abline(h=mean(dst),col=cbp[7],lty=3)
-abline(h=1,lty=2)
-dev.off()
+# if(bw){
+#   pdf('data_plots_man/man_grds_bw.pdf',width=7,height=5)
+#   plot(grt,type='l',lty=1,main='Dynamic activity',
+#        ylim=c(0,max(grt)+1),ylab='Grown or dissolved edges / nNodes',xlab='Week')
+#   lines(grt,type='p',pch=17)
+#   lines(dst,type='l',lty=2)
+#   lines(dst,type='p',pch=25,bg='white')
+#   #abline(h=mean(grt),col=cbp[3],lty=3)
+#   #abline(h=mean(dst),col=cbp[7],lty=3)
+#   #abline(h=1,lty=2)
+#   dev.off()
+# } else{
+#   pdf('data_plots_man/man_grds.pdf',width=7,height=5)
+#   plot(grt,type='b',col=cbp[3],main='Dynamic activity',
+#        ylim=c(0,max(grt)+1),ylab='Grown or dissolved edges / nNodes',xlab='Week')
+#   lines(dst,type='b',col=cbp[7])
+#   abline(h=mean(grt),col=cbp[3],lty=3)
+#   abline(h=mean(dst),col=cbp[7],lty=3)
+#   #abline(h=1,lty=2)
+#   dev.off()
+# }
 
 # O(p^2) scaled growth and dissolution
 grt_p2 <- apply(grow_sub,3,sum)/(p*(p-1))
 dst_p2 <- apply(diss_sub,3,sum)/(p*(p-1))
 
-pdf('data_plots_man/man_grds_p2.pdf',width=7,height=5)
-plot(grt_p2,type='b',col=cbp[3],main='Dynamic activity',
-     ylim=c(0,0.1),ylab='Dynamic activity - form/dissolve',xlab='')
-lines(dst_p2,type='b',col=cbp[7])
-abline(h=mean(grt_p2),col=cbp[3],lty=3)
-abline(h=mean(dst_p2),col=cbp[7],lty=3)
-#abline(h=1,lty=2)
-dev.off()
+if(bw){
+  pdf('data_plots_man/man_grds_p2_bw.pdf',width=7,height=5)
+  plot(grt_p2,type='l',lty=1,main='Dynamic activity',
+       ylim=c(0,0.1),ylab='Dynamic activity - form/dissolve',xlab='Week',cex.main=1.5,cex.lab=1.4)
+  lines(grt_p2,type='p',pch=17)
+  lines(dst_p2,type='l',lty=2)
+  lines(dst_p2,type='p',pch=25,bg='white')
+  #abline(h=mean(grt_p2),col=cbp[3],lty=3)
+  #abline(h=mean(dst_p2),col=cbp[7],lty=3)
+  #abline(h=1,lty=2)
+  dev.off()
+} else{
+  pdf('data_plots_man/man_grds_p2.pdf',width=7,height=5)
+  plot(grt_p2,type='b',col=cbp[3],main='Dynamic activity',
+       ylim=c(0,0.1),ylab='Dynamic activity - form/dissolve',xlab='Week',cex.main=1.5,cex.lab=1.4)
+  lines(dst_p2,type='b',col=cbp[7])
+  abline(h=mean(grt_p2),col=cbp[3],lty=3)
+  abline(h=mean(dst_p2),col=cbp[7],lty=3)
+  #abline(h=1,lty=2)
+  dev.off()
+}
 
 # normalized growth and dissolution
 grow_norm <- grow_sub
@@ -155,14 +184,14 @@ diss_norm <- diss_sub
 diss_norm[(X[,,-n]==0)] <- NA
 dst_norm <- apply(diss_norm,3,mean,na.rm=TRUE)
 
-pdf('data_plots_man/man_grds_norm.pdf',width=7,height=5)
-plot(grt_norm,type='b',col=cbp[3],main='Dynamic activity',
-     ylim=c(0,1),ylab='Relative freq.')
-lines(dst_norm,type='b',col=cbp[7])
-abline(h=mean(grt_norm),col=cbp[3],lty=3)
-abline(h=mean(dst_norm),col=cbp[7],lty=3)
-abline(h=1,lty=2)
-dev.off()
+# pdf('data_plots_man/man_grds_norm.pdf',width=7,height=5)
+# plot(grt_norm,type='b',col=cbp[3],main='Dynamic activity',
+#      ylim=c(0,1),ylab='Relative freq.')
+# lines(dst_norm,type='b',col=cbp[7])
+# abline(h=mean(grt_norm),col=cbp[3],lty=3)
+# abline(h=mean(dst_norm),col=cbp[7],lty=3)
+# abline(h=1,lty=2)
+# dev.off()
 
 # growth and dissolution prob. after conditioning on density
 # e_sparse <- (apply(X,c(1,2),mean) < 0.2)
@@ -226,15 +255,31 @@ gr_cn_summary <- table(gr_cn[,1],gr_cn[,2])
 # columns by number of previous common neighbors
 
 # summarize this table
-pdf('data_plots_man/man_grtrans.pdf',width=7,height=5)
-plot(as.numeric(colnames(gr_cn_summary)),
-     gr_cn_summary[2,]/colSums(gr_cn_summary),
-     type='p',pch=16,cex=log(colSums(gr_cn_summary))/5,col=cbp[3],
-     main='Transitivity effects on grown edges',
-     xlab='Number of common neighbours',ylab='Relative freq. formed edge')
-abline(h=0,lty=2)
-abline(h=1,lty=2)
-dev.off()
+if(bw){
+  pdf('data_plots_man/man_grtrans_bw.pdf',width=7,height=5)
+  plot(as.numeric(colnames(gr_cn_summary)),
+       gr_cn_summary[2,]/colSums(gr_cn_summary),
+       type='p',pch=17,cex=(3+log(colSums(gr_cn_summary)))/6,
+       main='Transitivity effects on grown edges',cex.main=1.5,
+       xlab='Number of common neighbours',ylab='Relative freq. formed edge',cex.lab=1.4)
+  legend(x=17.5,y=0.25,pch=17,title='Sample size',
+         pt.cex=(3+log(c(1e4,1e2,1)))/6,legend=c(TeX('$10^4$'),TeX('$10^2$'),TeX('$1$')))
+  #abline(h=0,lty=2)
+  #abline(h=1,lty=2)
+  dev.off()
+} else{
+  pdf('data_plots_man/man_grtrans.pdf',width=7,height=5)
+  plot(as.numeric(colnames(gr_cn_summary)),
+       gr_cn_summary[2,]/colSums(gr_cn_summary),
+       type='p',pch=16,cex=(3+log(colSums(gr_cn_summary)))/6,col=cbp[3],
+       main='Transitivity effects on grown edges',cex.main=1.5,
+       xlab='Number of common neighbours',ylab='Relative freq. formed edge',cex.lab=1.4)
+  legend(x=17.5,y=0.25,pch=16,col=cbp[3],title='Sample size',
+         pt.cex=(3+log(c(1e4,1e2,1)))/6,legend=c(TeX('$10^4$'),TeX('$10^2$'),TeX('$1$')))
+  #abline(h=0,lty=2)
+  #abline(h=1,lty=2)
+  dev.off()
+}
 
 # same for dissolving edges
 ds_ncn <- NULL
@@ -262,15 +307,31 @@ ds_ncn_summary <- table(ds_ncn[,1],ds_ncn[,2])
 #ds_ncn_summary <- ds_ncn_summary[,colSums(ds_ncn_summary) > 50]
 
 # summarize this table
-pdf('data_plots_man/man_dstrans.pdf',width=7,height=5)
-plot(as.numeric(colnames(ds_ncn_summary)),
-     ds_ncn_summary[2,]/colSums(ds_ncn_summary),
-     type='p',pch=16,cex=log(colSums(ds_ncn_summary))/4,col=cbp[7],
-     main='Transitivity effects on dissolved edges',
-     xlab='Number of disjoint neighbours',ylab='Relative freq. dissolved edge')
-abline(h=0,lty=2)
-abline(h=1,lty=2)
-dev.off()
+if(bw){
+  pdf('data_plots_man/man_dstrans_bw.pdf',width=7,height=5)
+  plot(as.numeric(colnames(ds_ncn_summary)),
+       ds_ncn_summary[2,]/colSums(ds_ncn_summary),
+       type='p',pch=6,bg='white',cex=(3+log(colSums(ds_ncn_summary)))/6,
+       main='Transitivity effects on dissolved edges',cex.main=1.5,
+       xlab='Number of disjoint neighbours',ylab='Relative freq. dissolved edge',cex.lab=1.4)
+  legend(x=0,y=1,pch=6,bg='white',title='Sample size',
+         pt.cex=(3+log(c(1e4,1e2,1)))/6,legend=c(TeX('$10^4$'),TeX('$10^2$'),TeX('$1$')))
+  # abline(h=0,lty=2)
+  # abline(h=1,lty=2)
+  dev.off()
+} else{
+  pdf('data_plots_man/man_dstrans.pdf',width=7,height=5)
+  plot(as.numeric(colnames(ds_ncn_summary)),
+       ds_ncn_summary[2,]/colSums(ds_ncn_summary),
+       type='p',pch=16,cex=(3+log(colSums(ds_ncn_summary)))/6,col=cbp[7],
+       main='Transitivity effects on dissolved edges',cex.main=1.5,
+       xlab='Number of disjoint neighbours',ylab='Relative freq. dissolved edge',cex.lab=1.4)
+  legend(x=0,y=1,pch=16,col=cbp[7],title='Sample size',
+         pt.cex=(3+log(c(1e4,1e2,1)))/6,legend=c(TeX('$10^4$'),TeX('$10^2$'),TeX('$1$')))
+  # abline(h=0,lty=2)
+  # abline(h=1,lty=2)
+  dev.off()
+}
 
 #### Degree heterogeneity ####
 
@@ -279,29 +340,29 @@ dev.off()
 # rough degree parameters for growing edges based on summary counts
 gr_nhet <- apply(grow_sub,1,sum)
 
-pdf('data_plots_man/man_grnhet.pdf',width=7,height=5)
-hist(gr_nhet,20,
-     col=cbp[3],
-     main="Growing edge node heterogeneity")
-dev.off()
+# pdf('data_plots_man/man_grnhet.pdf',width=7,height=5)
+# hist(gr_nhet,20,
+#      col=cbp[3],
+#      main="Growing edge node heterogeneity")
+# dev.off()
 
 # rough degree parameters for dissolving edges based on summary counts
 ds_nhet <- apply(diss_sub,1,sum)
 
-pdf('data_plots_man/man_dsnhet.pdf',width=7,height=5)
-hist(ds_nhet,20,
-     col=cbp[7],
-     main="Dissolving edge node heterogeneity")
-dev.off()
+# pdf('data_plots_man/man_dsnhet.pdf',width=7,height=5)
+# hist(ds_nhet,20,
+#      col=cbp[7],
+#      main="Dissolving edge node heterogeneity")
+# dev.off()
 
 #### comparison of dynamic and density ####
 
 # recall gr_nhet and ds_nhet for the total number of grows/dissolves
-pdf('data_plots_man/man_nodehet.pdf',width=7,height=5)
-hist(gr_nhet + ds_nhet,20,
-     main='Total dynamic activity by node',
-     xlab='dynamic_count')
-dev.off()
+# pdf('data_plots_man/man_nodehet.pdf',width=7,height=5)
+# hist(gr_nhet + ds_nhet,20,
+#      main='Total dynamic activity by node',
+#      xlab='dynamic_count')
+# dev.off()
 
 # total edges
 deg_nhet <- apply(X,1,sum)
@@ -309,15 +370,15 @@ deg_nhet <- apply(X,1,sum)
 #      main='Total degree by node')
 
 # scatter
-pdf('data_plots_man/man_degvsdens.pdf',width=7,height=5)
-plot(deg_nhet,gr_nhet + ds_nhet,
-     type='p',xlab='Total edges',ylab='Total dynamic activity',
-     main='Total degree vs dynamic activity by node')
-abline(a=0,b=2,lty=2) # upper bound on dynamic activity
-lines(deg_nhet[order(deg_nhet)],
-      loess(gr_nhet + ds_nhet ~ deg_nhet,degree=1)$fitted[order(deg_nhet)],
-      col=cbp[3],lty=1,lwd=1.5)
-dev.off()
+# pdf('data_plots_man/man_degvsdens.pdf',width=7,height=5)
+# plot(deg_nhet,gr_nhet + ds_nhet,
+#      type='p',xlab='Total edges',ylab='Total dynamic activity',
+#      main='Total degree vs dynamic activity by node')
+# abline(a=0,b=2,lty=2) # upper bound on dynamic activity
+# lines(deg_nhet[order(deg_nhet)],
+#       loess(gr_nhet + ds_nhet ~ deg_nhet,degree=1)$fitted[order(deg_nhet)],
+#       col=cbp[3],lty=1,lwd=1.5)
+# dev.off()
 
 #### looking at local node densities ####
 
@@ -334,23 +395,23 @@ library(scales)
 ncol <- 11
 colvec <- rep(1:ncol,ceiling(p/ncol))[1:p]
 
-pdf('data_plots_man/man_nodestat.pdf',width=7,height=5)
-matplot(1:n,node_dens_smooth,type='l',pch=1,lty=1,lwd=.5+nonstat/(.5+max(nonstat)),
-        col=alpha(colvec,alpha=nonstat/max(nonstat)),
-        main="Smoothed degree sequence by node",
-        ylab="Smoothed degree",
-        xlab='Time')
-dev.off()
+# pdf('data_plots_man/man_nodestat.pdf',width=7,height=5)
+# matplot(1:n,node_dens_smooth,type='l',pch=1,lty=1,lwd=.5+nonstat/(.5+max(nonstat)),
+#         col=alpha(colvec,alpha=nonstat/max(nonstat)),
+#         main="Smoothed degree sequence by node",
+#         ylab="Smoothed degree",
+#         xlab='Time')
+# dev.off()
 
 # show the data for the five 'most nonstationary'
-pdf('data_plots_man/man_nodestatsub.pdf',width=7,height=5)
-matplot(1:n,t(node_dens[order(nonstat,decreasing=TRUE)[1:5],]),
-        type='b',pch=1:5,#col=colvec[order(nonstat,decreasing=TRUE)[1:5]],
-        col=1,lty=1,
-        main='Degree sequences of potential nonstationary nodes (top 5)',
-        ylab='Degree',xlab='Time')
-abline(h=0,lty=2)
-dev.off()
+# pdf('data_plots_man/man_nodestatsub.pdf',width=7,height=5)
+# matplot(1:n,t(node_dens[order(nonstat,decreasing=TRUE)[1:5],]),
+#         type='b',pch=1:5,#col=colvec[order(nonstat,decreasing=TRUE)[1:5]],
+#         col=1,lty=1,
+#         main='Degree sequences of potential nonstationary nodes (top 5)',
+#         ylab='Degree',xlab='Time')
+# abline(h=0,lty=2)
+# dev.off()
 
 #### persistence summary metrics ####
 
@@ -392,27 +453,27 @@ ds_3t <- sum(Ap*Apm1*Apm2)/2
 # plotting
 library(latex2exp)
 
-pdf('data_plots_man/man_grpers.pdf',width=7,height=5)
-barplot(c(gr_11/gr_1t,gr_21/gr_2t,gr_31/gr_3t),
-        width=log(c(gr_1t,gr_2t,gr_3t)),
-        col=cbp[3],
-        main='Persistence effects on grown edges',
-        ylab='P(grow edge) @ t',
-        names.arg=c(TeX('$X_{{ij}}^{{t-2}}=1$'),
-                    TeX('$X_{{ij}}^{{t-2}}=0, X_{{ij}}^{{t-3}}=1$'),
-                    TeX('$X_{{ij}}^{{t-2}}=0, X_{{ij}}^{{t-3}}=0$')))
-dev.off()
+# pdf('data_plots_man/man_grpers.pdf',width=7,height=5)
+# barplot(c(gr_11/gr_1t,gr_21/gr_2t,gr_31/gr_3t),
+#         width=log(c(gr_1t,gr_2t,gr_3t)),
+#         col=cbp[3],
+#         main='Persistence effects on grown edges',
+#         ylab='P(grow edge) @ t',
+#         names.arg=c(TeX('$X_{{ij}}^{{t-2}}=1$'),
+#                     TeX('$X_{{ij}}^{{t-2}}=0, X_{{ij}}^{{t-3}}=1$'),
+#                     TeX('$X_{{ij}}^{{t-2}}=0, X_{{ij}}^{{t-3}}=0$')))
+# dev.off()
 
-pdf('data_plots_man/man_dspers.pdf',width=7,height=5)
-barplot(c(ds_11/ds_1t,ds_21/ds_2t,ds_31/ds_3t),
-        width=log(c(ds_1t,ds_2t,ds_3t)),
-        col=cbp[7],
-        main='Persistence effects on dissolved edges',
-        ylab='P(dissolve edge) @ t',
-        names.arg=c(TeX('$X_{{ij}}^{{t-2}}=0$'),
-                    TeX('$X_{{ij}}^{{t-2}}=1, X_{{ij}}^{{t-3}}=0$'),
-                    TeX('$X_{{ij}}^{{t-2}}=1, X_{{ij}}^{{t-3}}=1$')))
-dev.off()
+# pdf('data_plots_man/man_dspers.pdf',width=7,height=5)
+# barplot(c(ds_11/ds_1t,ds_21/ds_2t,ds_31/ds_3t),
+#         width=log(c(ds_1t,ds_2t,ds_3t)),
+#         col=cbp[7],
+#         main='Persistence effects on dissolved edges',
+#         ylab='P(dissolve edge) @ t',
+#         names.arg=c(TeX('$X_{{ij}}^{{t-2}}=0$'),
+#                     TeX('$X_{{ij}}^{{t-2}}=1, X_{{ij}}^{{t-3}}=0$'),
+#                     TeX('$X_{{ij}}^{{t-2}}=1, X_{{ij}}^{{t-3}}=1$')))
+# dev.off()
 
 #### density-dependent model summary metrics ####
 
@@ -446,22 +507,22 @@ gr_rate <- apply(grow_sub,3,sum) / apply(1-X[,,-n],3,function(x){sum(x) - p})
 ds_rate <- apply(diss_sub,3,sum) / apply(X[,,-n],3,sum)
 
 # comparing grown edge rate to previous density
-pdf('data_plots_man/man_grgdens.pdf',width=7,height=5)
-plot(dens[-n],gr_rate,
-     main='Global density effects on grown edges',
-     col=cbp[3],pch=16,
-     xlab='Edge density @ t-1',
-     ylab='P(grow edge) @ t')
-dev.off()
+# pdf('data_plots_man/man_grgdens.pdf',width=7,height=5)
+# plot(dens[-n],gr_rate,
+#      main='Global density effects on grown edges',
+#      col=cbp[3],pch=16,
+#      xlab='Edge density @ t-1',
+#      ylab='P(grow edge) @ t')
+# dev.off()
 
 # comparing dissolved edge rate to previous density
-pdf('data_plots_man/man_dsgdens.pdf',width=7,height=5)
-plot(dens[-n],ds_rate,
-     main='Global density effects on dissolved edges',
-     col=cbp[7],pch=16,
-     xlab='Edge density @ t-1',
-     ylab='P(dissolve edge) @ t')
-dev.off()
+# pdf('data_plots_man/man_dsgdens.pdf',width=7,height=5)
+# plot(dens[-n],ds_rate,
+#      main='Global density effects on dissolved edges',
+#      col=cbp[7],pch=16,
+#      xlab='Edge density @ t-1',
+#      ylab='P(dissolve edge) @ t')
+# dev.off()
 
 # LOCAL
 # 1. more likely to flip on if the total degree of i and j at time t-1 is larger
@@ -501,26 +562,26 @@ ds_localdens_summary <- table(ds_localdens[,1],ds_localdens[,2])
 # columns by number of previous common neighbors
 
 # summarize this table
-pdf('data_plots_man/man_grldens.pdf',width=7,height=5)
-plot(as.numeric(colnames(gr_localdens_summary)),
-     gr_localdens_summary[2,]/colSums(gr_localdens_summary),
-     type='p',pch=16,cex=log(colSums(gr_localdens_summary))/8,col=cbp[3],
-     ylim=c(0,.2),
-     main='Local density effects on grown edges',
-     xlab='Degree i + Degree j @ t-1',ylab='P(grow edge) @ t')
-abline(h=0,lty=2)
-abline(h=1,lty=2)
-dev.off()
+# pdf('data_plots_man/man_grldens.pdf',width=7,height=5)
+# plot(as.numeric(colnames(gr_localdens_summary)),
+#      gr_localdens_summary[2,]/colSums(gr_localdens_summary),
+#      type='p',pch=16,cex=log(colSums(gr_localdens_summary))/8,col=cbp[3],
+#      ylim=c(0,.2),
+#      main='Local density effects on grown edges',
+#      xlab='Degree i + Degree j @ t-1',ylab='P(grow edge) @ t')
+# abline(h=0,lty=2)
+# abline(h=1,lty=2)
+# dev.off()
 
-pdf('data_plots_man/man_dsldens.pdf',width=7,height=5)
-plot(as.numeric(colnames(ds_localdens_summary)),
-     ds_localdens_summary[2,]/colSums(ds_localdens_summary),
-     type='p',pch=16,cex=log(colSums(ds_localdens_summary))/6,col=cbp[7],
-     main='Local density effects on dissolved edges',
-     xlab='Degree i + Degree j @ t-1',ylab='P(dissolve edge) @ t')
-abline(h=0,lty=2)
-abline(h=1,lty=2)
-dev.off()
+# pdf('data_plots_man/man_dsldens.pdf',width=7,height=5)
+# plot(as.numeric(colnames(ds_localdens_summary)),
+#      ds_localdens_summary[2,]/colSums(ds_localdens_summary),
+#      type='p',pch=16,cex=log(colSums(ds_localdens_summary))/6,col=cbp[7],
+#      main='Local density effects on dissolved edges',
+#      xlab='Degree i + Degree j @ t-1',ylab='P(dissolve edge) @ t')
+# abline(h=0,lty=2)
+# abline(h=1,lty=2)
+# dev.off()
 
 # correlation between transitivity and local density effects?
 gr_transdenscor <- cor(gr_cn[,2],gr_localdens[,2])
