@@ -28,7 +28,7 @@ You can install the development version of arnetworks from [GitHub](https://gith
 
 ## Example 1: Transitivity Model
 
-The package provides a detailed implementation for fitting a particular AR network model with transitivity effects (see Chang et al. (2024+), Section 3.3). This is a basic example which shows how to simulate, estimate and predict with this model.
+The package provides a detailed implementation for fitting a particular AR network model with transitivity effects (see **Chang et al. (2024+), Section 3.3**). This is a basic example which shows how to simulate, estimate and predict with this model.
 
 ```{r example1}
 library(arnetworks)
@@ -79,7 +79,7 @@ pred1 = predictTransitivity(fit1,Xnew,nStep=2)
 
 ## Example 2: Persistence Model
 
-The package also allows users to specify their own AR network models with both local and global parameters. This is a basic example which shows how to simulate, estimate and predict with the persistence model (see Chang et al. (2024+), Section 3.2).
+The package also allows users to **specify their own AR network models** with both local and global parameters. This is a basic example which shows how to simulate, estimate and predict with the **persistence model** (see Chang et al. (2024+), Section 3.2). For an additional example on how to estimate and predict with the **transitivity model**, please see the documenation for `estNet`.
 
 ```{r example2}
 library(arnetworks)

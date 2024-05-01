@@ -20,8 +20,8 @@ You can install the development version of arnetworks from
 ## Example 1: Transitivity Model
 
 The package provides a detailed implementation for fitting a particular
-AR network model with transitivity effects (see Chang et al. (2024+),
-Section 3.3). This is a basic example which shows how to simulate,
+AR network model with transitivity effects (see **Chang et al. (2024+),
+Section 3.3**). This is a basic example which shows how to simulate,
 estimate and predict with this model.
 
 ``` r
@@ -50,15 +50,15 @@ fit1 = estTransitivity(X, U, V, rSeqGlob=c(50,10), rSeqLoc=c(0.5,0.1))
 
 # global parameters for edge formation and dissoluton
 print(fit1$gVal)
-#> [1] 31.67574 15.00046
+#> [1] 28.87053 15.27376
 # local parameters for edge formation (quartiles)
 print(quantile(fit1$xi))
 #>        0%       25%       50%       75%      100% 
-#> 0.5990086 0.6883074 0.7172429 0.7422498 0.8600766
+#> 0.6239415 0.7053004 0.7267167 0.7647692 0.8599142
 # local parameters for edge formation (quartiles)
 print(quantile(fit1$eta))
 #>        0%       25%       50%       75%      100% 
-#> 0.6981899 0.7684887 0.7968669 0.8204867 0.9041464
+#> 0.6621665 0.7676051 0.7907868 0.8242973 0.8891144
 
 # note that the same global parameters are shared by the edge formation and dissolution models
 
@@ -77,10 +77,12 @@ pred1 = predictTransitivity(fit1,Xnew,nStep=2)
 
 ## Example 2: Persistence Model
 
-The package also allows users to specify their own AR network models
+The package also allows users to **specify their own AR network models**
 with both local and global parameters. This is a basic example which
-shows how to simulate, estimate and predict with the persistence model
-(see Chang et al. (2024+), Section 3.2).
+shows how to simulate, estimate and predict with the **persistence
+model** (see Chang et al. (2024+), Section 3.2). For an additional
+example on how to estimate and predict with the **transitivity model**,
+please see the documenation for `estNet`.
 
 ``` r
 library(arnetworks)
@@ -131,18 +133,18 @@ fit2 <- estNet(X, fij, gij,
 
 # global parameter for edge formation
 print(fit2$gAlphaVal)
-#> [1] 0.5057602
+#> [1] 0.5321285
 # global parameter for edge dissolution
 print(fit2$gBetaVal)
-#> [1] 0.4986114
+#> [1] 0.5177779
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$xi))
 #>        0%       25%       50%       75%      100% 
-#> 0.4595186 0.5795012 0.6790065 0.7805612 1.0127399
+#> 0.4166115 0.5810328 0.6607679 0.7851298 1.0219436
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$eta))
 #>        0%       25%       50%       75%      100% 
-#> 0.4334933 0.5748569 0.6466205 0.7605732 0.9279260
+#> 0.4453189 0.5823875 0.6773083 0.7655460 0.9533456
 
 # Predict the next network snapshot
 
