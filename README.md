@@ -50,15 +50,15 @@ fit1 = estTransitivity(X, U, V, rSeqGlob=c(50,10), rSeqLoc=c(0.5,0.1))
 
 # global parameters for edge formation and dissoluton
 print(fit1$gVal)
-#> [1] 29.25391 15.46345
+#> [1] 31.67574 15.00046
 # local parameters for edge formation (quartiles)
 print(quantile(fit1$xi))
 #>        0%       25%       50%       75%      100% 
-#> 0.6464154 0.6973152 0.7291594 0.7628517 0.8474749
+#> 0.5990086 0.6883074 0.7172429 0.7422498 0.8600766
 # local parameters for edge formation (quartiles)
 print(quantile(fit1$eta))
 #>        0%       25%       50%       75%      100% 
-#> 0.6868115 0.7557358 0.7784754 0.8092884 0.8533644
+#> 0.6981899 0.7684887 0.7968669 0.8204867 0.9041464
 
 # note that the same global parameters are shared by the edge formation and dissolution models
 
@@ -131,18 +131,18 @@ fit2 <- estNet(X, fij, gij,
 
 # global parameter for edge formation
 print(fit2$gAlphaVal)
-#> [1] 0.7605997
+#> [1] 0.5057602
 # global parameter for edge dissolution
 print(fit2$gBetaVal)
-#> [1] 0.7459231
+#> [1] 0.4986114
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$xi))
 #>        0%       25%       50%       75%      100% 
-#> 0.5827530 0.7682047 0.8817997 0.9469047 1.1739032
+#> 0.4595186 0.5795012 0.6790065 0.7805612 1.0127399
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$eta))
 #>        0%       25%       50%       75%      100% 
-#> 0.5920009 0.7872615 0.8903429 0.9846027 1.2306834
+#> 0.4334933 0.5748569 0.6466205 0.7605732 0.9279260
 
 # Predict the next network snapshot
 
