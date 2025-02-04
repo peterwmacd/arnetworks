@@ -25,7 +25,7 @@ raw_data <- data.frame(t=ceiling((package_data$onset - 1262482809)/(60*60*24)),
                        i=package_data$tail,
                        j=package_data$head)
 # network construction parameters
-dT <- 7 # weekly windowing
+dT <- 1 # daily windowing
 tmin <- min(raw_data$t)+1
 tmax <- max(raw_data$t)
 dynamic_thresh <- 100
@@ -58,36 +58,6 @@ for(rr in 1:nrow(raw_data)){
         X_raw[ii,jj,tt] <- 1
         # symmetrize
         X_raw[jj,ii,tt] <- 1
-      }
-    }
-  }
-}
-#print(dim(X_raw))
-
-##### network construction by day #####
-
-# construct network snapshots for a given time window
-
-# construct snapshots by reading edgelist
-# get nodes
-nodes <- unique(c(raw_data$i,raw_data$j))
-p_raw <- length(nodes)
-# get snapshot windows
-dn_day <- seq(tmin,tmax+1,1)
-n_day <- length(dn_day)-1
-X_raw_day <- array(0,c(p_raw,p_raw,n_day))
-
-for(rr in 1:nrow(raw_data)){
-  temp <- which(raw_data$t[rr] >= dn_day)
-  if(length(temp) > 0){
-    tt <- max(which(raw_data$t[rr] >= dn_day))
-    if(tt < (n_day+1)){
-      ii <- which(nodes==raw_data$i[rr])
-      jj <- which(nodes==raw_data$j[rr])
-      if(ii != jj){
-        X_raw_day[ii,jj,tt] <- 1
-        # symmetrize
-        X_raw_day[jj,ii,tt] <- 1
       }
     }
   }
@@ -134,7 +104,6 @@ dynamic_count <- apply(grow+diss,1,sum)
 
 node_keep <- which(dynamic_count >= dynamic_thresh)
 X <- X_raw[node_keep,node_keep,]
-X_day <- X_raw_day[node_keep,node_keep,]
 p <- dim(X)[1]
 # hierarchical level of active nodes
 levels <- node_level[node_keep]
@@ -142,7 +111,6 @@ levels <- node_level[node_keep]
 
 # save clean data and metadata
 saveRDS(X,file='data/X_man.rds')
-saveRDS(X_day,file='data/X_man_day.rds')
 saveRDS(levels,file='data/levels_man.rds')
 
 # subset grow/dissolve arrays
@@ -156,19 +124,6 @@ pdf('data_plots_man/man_dens.pdf',width=7,height=5)
 plot(dens,type='b',main='Edge density',
      ylab='Edge density',xlab='Week',cex.main=1.5,cex.lab=1.4)
 dev.off()
-
-# now edge density on the subnetwork by day
-dens <- apply(X_day,3,mean)
-
-pdf('data_plots_man/man_day_dens.pdf',width=10,height=5)
-plot(dens,type='p',main='Edge density (daily)',
-     ylab='Edge density',xlab='Day',cex.main=1.5,cex.lab=1.4,cex=0.8)
-dev.off()
-
-# days of the week data
-dows <- rep(c('M','Tu','W','Th','F','Sa','Su'),39)[1:271]
-weekdays <- data.frame(dens=dens,dows=dows)
-boxplot(dens ~ dows,data=weekdays,main='Edge density by day of the week')
 
 # scaled growing/dissolving
 grt <- apply(grow_sub,3,sum)/p
@@ -275,54 +230,6 @@ dst_norm <- apply(diss_norm,3,mean,na.rm=TRUE)
 # looking for whether p(grow) = 1 - prob(dissolve) which would imply that there
 # is no observed AR structure, this is not the case, both groups show evidence of
 # persistence
-
-#### Growth/dissolution by day ####
-
-grow_day <- X_day[,,-1]*(1 - X_day[,,-n_day])
-diss_day <- X_day[,,-n_day]*(1 - X_day[,,-1])
-
-grt_p2_day <- apply(grow_day,3,sum)/(p*(p-1))
-dst_p2_day <- apply(diss_day,3,sum)/(p*(p-1))
-
-pdf('data_plots_man/man_grds_p2_day.pdf',width=10,height=5)
-plot(grt_p2_day,type='p',col=cbp[3],main='Dynamic activity (daily)',
-     ylim=c(0,0.1),ylab='Dynamic activity - form/dissolve',xlab='Week',cex.main=1.5,cex.lab=1.4,cex=0.8)
-lines(dst_p2_day,type='p',col=cbp[7],cex=0.8)
-abline(h=mean(grt_p2_day),col=cbp[3],lty=3)
-abline(h=mean(dst_p2_day),col=cbp[7],lty=3)
-#abline(h=1,lty=2)
-dev.off()
-
-# days of the week data
-boxplot(grt_p2_day ~ dows[-1],main='Edge growth by day of the week')
-boxplot(dst_p2_day ~ dows[-1],main='Edge dissolution by day of the week')
-# nothing beyond the very obvious weekend effects
-
-#### Growth/dissolution for weekdays ####
-
-wd <- dows %in% c('M','Tu','W','Th','F')
-X_weekday <- X_day[,,wd]
-n_weekday <- dim(X_weekday)[3]
-grow_weekday <- X_weekday[,,-1]*(1 - X_weekday[,,-n_weekday])
-diss_weekday <- X_weekday[,,-n_weekday]*(1 - X_weekday[,,-1])
-
-grt_p2_weekday <- apply(grow_weekday,3,sum)/(p*(p-1))
-dst_p2_weekday <- apply(diss_weekday,3,sum)/(p*(p-1))
-
-pdf('data_plots_man/man_grds_p2_weekday.pdf',width=10,height=5)
-plot(grt_p2_weekday,type='p',col=cbp[3],main='Dynamic activity',
-     ylim=c(0,0.1),ylab='Dynamic activity - form/dissolve',xlab='Week',cex.main=1.5,cex.lab=1.4,cex=0.8)
-lines(dst_p2_weekday,type='p',col=cbp[7],cex=0.8)
-abline(h=mean(grt_p2_weekday),col=cbp[3],lty=3)
-abline(h=mean(dst_p2_weekday),col=cbp[7],lty=3)
-#abline(h=1,lty=2)
-dev.off()
-
-# days of the week data
-boxplot(grt_p2_weekday ~ dows[wd][-1],main='Edge growth by day of the week')
-boxplot(dst_p2_weekday ~ dows[wd][-1],main='Edge dissolution by day of the week')
-# nothing beyond the very obvious weekend effects
-
 
 #### Transitivity metrics ####
 
