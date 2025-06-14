@@ -112,12 +112,15 @@ if(bw){
   pchvec <- c(1,0,6,NA,2,5)
 
   pdf(file='fit_plots_man/theta_scatter_man1_bw.pdf')
+
   par(mar=c(4,5.5,4,4))
   plot(fit_man1$xi,fit_man1$eta,
        main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
        xlim=c(0,1.5),ylim=c(0,1.5),cex=.8*levels,pch=pchvec[levels],cex.lab=1.8,cex.main=1.5)
   abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
+
   dev.off()
+
 } else{
   pdf(file='fit_plots_man/theta_scatter_man1.pdf')
   par(mar=c(4,5.5,4,4))
