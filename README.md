@@ -21,16 +21,16 @@ You can install the development version of arnetworks from
 
 The package provides a detailed implementation for fitting a particular
 AR network model with transitivity effects (see **Chang et al. (2024+),
-Section 3.3**). This is a basic example which shows how to simulate,
+Section 4.3**). This is a basic example which shows how to simulate,
 estimate and predict with this model.
 
 ``` r
 library(arnetworks)
 # Transitivity model
 
-p = 100; n = 50
-xi = rep(0.7, p); eta = rep(0.8, p)
-a = 30; b = 15
+p = 50; n = 100
+xi = rep(0.8, p); eta = rep(0.9, p)
+a = 10; b = 10
 
 # Simulate data using simulateTransitivity function
 data1 = simulateTransitivity(p, n, xi, eta, a, b)
@@ -41,24 +41,24 @@ V = data1$V
 # in addition to the data, simulateTransitivity returns the sufficient statistics, the
 # scaled number of common and uncommon neighbours for each edge as U and V respectively
 
-fit1 = estTransitivity(X, U, V, rSeqGlob=c(50,10), rSeqLoc=c(0.5,0.1))
+fit1 = estTransitivity(X, U, V, tauSeq_a = 0.3, tauSeq_b = 0.3, tauSeq_xi = 0.05, tauSeq_eta = 0.05,
+                       rSeqGlob=c(50,10), rSeqLoc=c(0.5,0.1))
 
-# the model optimization requires tuning parameters rSeqGlob and rSeqLoc 
-# (see Chang et al. (2024+), Section 4.3). These parameters control the radius of search for the
-# estimator refinement. Default values are provided if not specified (see the documenation for
-# estTransitivity)
+# the model optimization requires tuning parameters:tauSeq_a, tauSeq_b, tauSeq_xi, tauSeq_eta, rSeqGlob and rSeqLoc
+# (see Chang et al. (2025+), Section 5). These parameters control the tau values used in the projection-based refinement step and radius of search for the estimator refinement. Default values are provided if not specified (see the
+# documenation for estTransitivity)
 
 # global parameters for edge formation and dissoluton
 print(fit1$gVal)
-#> [1] 28.87053 15.27376
+#> [1]  9.208339 10.220692
 # local parameters for edge formation (quartiles)
 print(quantile(fit1$xi))
 #>        0%       25%       50%       75%      100% 
-#> 0.6239415 0.7053004 0.7267167 0.7647692 0.8599142
+#> 0.6945489 0.7727419 0.8257124 0.8641816 0.9426902
 # local parameters for edge formation (quartiles)
 print(quantile(fit1$eta))
 #>        0%       25%       50%       75%      100% 
-#> 0.6621665 0.7676051 0.7907868 0.8242973 0.8891144
+#> 0.8499758 0.8883862 0.9111250 0.9411023 0.9786972
 
 # note that the same global parameters are shared by the edge formation and dissolution models
 
@@ -80,7 +80,7 @@ pred1 = predictTransitivity(fit1,Xnew,nStep=2)
 The package also allows users to **specify their own AR network models**
 with both local and global parameters. This is a basic example which
 shows how to simulate, estimate and predict with the **persistence
-model** (see Chang et al. (2024+), Section 3.2). For an additional
+model** (see Chang et al. (2024+), Section 4.2). For an additional
 example on how to estimate and predict with the **transitivity model**,
 please see the documenation for `estNet`.
 
@@ -89,7 +89,7 @@ library(arnetworks)
 # Persistence model
 
 # Set model parameters
-p = 100; n = 50
+p = 50; n = 100
 xi = runif(p, 0.5, 0.9)
 eta = runif(p, 0.5, 0.9)
 a = 0.5
@@ -133,18 +133,18 @@ fit2 <- estNet(X, fij, gij,
 
 # global parameter for edge formation
 print(fit2$gAlphaVal)
-#> [1] 0.5321285
+#> [1] 0.5103177
 # global parameter for edge dissolution
 print(fit2$gBetaVal)
-#> [1] 0.5177779
+#> [1] 0.483452
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$xi))
 #>        0%       25%       50%       75%      100% 
-#> 0.4166115 0.5810328 0.6607679 0.7851298 1.0219436
+#> 0.4659019 0.5964992 0.6953642 0.7907144 0.9284358
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$eta))
 #>        0%       25%       50%       75%      100% 
-#> 0.4453189 0.5823875 0.6773083 0.7655460 0.9533456
+#> 0.4726406 0.6121069 0.6951797 0.7897641 0.9211895
 
 # Predict the next network snapshot
 

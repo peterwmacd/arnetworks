@@ -28,15 +28,15 @@ You can install the development version of arnetworks from [GitHub](https://gith
 
 ## Example 1: Transitivity Model
 
-The package provides a detailed implementation for fitting a particular AR network model with transitivity effects (see **Chang et al. (2024+), Section 3.3**). This is a basic example which shows how to simulate, estimate and predict with this model.
+The package provides a detailed implementation for fitting a particular AR network model with transitivity effects (see **Chang et al. (2024+), Section 4.3**). This is a basic example which shows how to simulate, estimate and predict with this model.
 
 ```{r example1}
 library(arnetworks)
 # Transitivity model
 
-p = 100; n = 50
-xi = rep(0.7, p); eta = rep(0.8, p)
-a = 30; b = 15
+p = 50; n = 100
+xi = rep(0.8, p); eta = rep(0.9, p)
+a = 10; b = 10
 
 # Simulate data using simulateTransitivity function
 data1 = simulateTransitivity(p, n, xi, eta, a, b)
@@ -47,12 +47,12 @@ V = data1$V
 # in addition to the data, simulateTransitivity returns the sufficient statistics, the
 # scaled number of common and uncommon neighbours for each edge as U and V respectively
 
-fit1 = estTransitivity(X, U, V, rSeqGlob=c(50,10), rSeqLoc=c(0.5,0.1))
+fit1 = estTransitivity(X, U, V, tauSeq_a = 0.3, tauSeq_b = 0.3, tauSeq_xi = 0.05, tauSeq_eta = 0.05,
+                       rSeqGlob=c(50,10), rSeqLoc=c(0.5,0.1))
 
-# the model optimization requires tuning parameters rSeqGlob and rSeqLoc 
-# (see Chang et al. (2024+), Section 4.3). These parameters control the radius of search for the
-# estimator refinement. Default values are provided if not specified (see the documenation for
-# estTransitivity)
+# the model optimization requires tuning parameters:tauSeq_a, tauSeq_b, tauSeq_xi, tauSeq_eta, rSeqGlob and rSeqLoc
+# (see Chang et al. (2025+), Section 5). These parameters control the tau values used in the projection-based refinement step and radius of search for the estimator refinement. Default values are provided if not specified (see the
+# documenation for estTransitivity)
 
 # global parameters for edge formation and dissoluton
 print(fit1$gVal)
@@ -79,14 +79,14 @@ pred1 = predictTransitivity(fit1,Xnew,nStep=2)
 
 ## Example 2: Persistence Model
 
-The package also allows users to **specify their own AR network models** with both local and global parameters. This is a basic example which shows how to simulate, estimate and predict with the **persistence model** (see Chang et al. (2024+), Section 3.2). For an additional example on how to estimate and predict with the **transitivity model**, please see the documenation for `estNet`.
+The package also allows users to **specify their own AR network models** with both local and global parameters. This is a basic example which shows how to simulate, estimate and predict with the **persistence model** (see Chang et al. (2024+), Section 4.2). For an additional example on how to estimate and predict with the **transitivity model**, please see the documenation for `estNet`.
 
 ```{r example2}
 library(arnetworks)
 # Persistence model
 
 # Set model parameters
-p = 100; n = 50
+p = 50; n = 100
 xi = runif(p, 0.5, 0.9)
 eta = runif(p, 0.5, 0.9)
 a = 0.5

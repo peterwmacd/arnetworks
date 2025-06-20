@@ -165,13 +165,13 @@ predictTransitivity <- function(estimates,
   }
   # populate current U/V statistics
   
-  # Define the expected names
-  expected_names <- c('gVal', 'xi', 'eta')
-  # Check if all names in 'estimates' match the expected names
-  if (!all(names(estimates) %in% expected_names)) {
-    # Create an error message that lists the expected names
-    expected_names_str <- paste("'", expected_names, "'", sep = "", collapse = ", ")
-    stop(sprintf("Estimate names do not match expected names. Expected names are: %s.", expected_names_str))
+  # Define the required names
+  required_names <- c('gVal', 'xi', 'eta')
+  
+  # Check if all required names are present in 'estimates'
+  if (!all(required_names %in% names(estimates))) {
+    required_names_str <- paste("'", required_names, "'", sep = "", collapse = ", ")
+    stop(sprintf("Missing required estimate names. Required names are: %s.", required_names_str))
   }
   xiM <- tcrossprod(estimates$xi)
   etaM <- tcrossprod(estimates$eta)
