@@ -2,8 +2,7 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^real_data
-^simulations
-^simulations_V2
+^simulation
 ^README.Rmd
 ^arNet
 ^scratch
