@@ -89,17 +89,17 @@ simulateTransitivity <- function(p, n, xi, eta, a, b, burn_in = 200) {
 }
 
 
-#' Simulation for Autoregressive Networks with Density Effects
+#' Simulation for Autoregressive Networks with Degree Heterogeneity
 #'
-#' This function simulates the evolution of an autoregressive network model with density effects. This model
-#' incorporates specified local and global parameters to influence the dynamics of network
+#' This function simulates the evolution of an autoregressive network model with degree heterogeneity.
+#' This model incorporates specified local and global parameters to influence the dynamics of network
 #' connections over time, utilizing a burn-in period to achieve stationarity.
 #'
 #' The model's evolution is characterized by two key equations that govern the probability
-#' of edge formation and dissolution between nodes, based on the network's density metrics:
+#' of edge formation and dissolution between nodes, based on the (normalized) node degrees:
 #' \deqn{\alpha_{i,j}^{t-1} = \xi_i\xi_j \frac{\exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\}}{1 + \exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\} + \exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}},}
 #' \deqn{\beta_{i,j}^{t-1} = \eta_i\eta_j \frac{\exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}}{1 + \exp\{a_0 D_{-i,-j}^{t-1} + a_1(D_{i}^{t-1} + D_{j}^{t-1})\} + \exp\{b_0(1 - D_{-i,-j}^{t-1}) + b_1(2 - D_{i}^{t-1} - D_{j}^{t-1})\}},}
-#' where \eqn{D_{-i,-j}^{t-1}} represents the network density excluding nodes \eqn{i} and \eqn{j}, and \eqn{D_i^{t-1}} denotes the normalized degree of node \eqn{i} at time \eqn{t-1}, respectively.
+#' where \eqn{D_{-i,-j}^{t-1}} represents the normalized average degree excluding nodes \eqn{i} and \eqn{j}, and \eqn{D_i^{t-1}} denotes the normalized degree of node \eqn{i} at time \eqn{t-1}, respectively.
 #'
 #' @param p Integer, specifying the number of nodes in the network.
 #' @param n Integer, indicating the number of observations to simulate, excluding the burn-in period.
@@ -111,21 +111,21 @@ simulateTransitivity <- function(p, n, xi, eta, a, b, burn_in = 200) {
 #' @return A list containing:
 #'    - \code{X}: An array of the network's adjacency matrices over time (\eqn{p} x \eqn{p} x \eqn{n}), after the burn-in period.
 #'    - \code{D}: A matrix of individual node normalized degrees over time (\eqn{p} x \eqn{n}).
-#'    - \code{Dcij}: An array of network densities excluding specific node pairs (\eqn{i, j}) over time (\eqn{p} x \eqn{p} x \eqn{n}), for probability calculations.
+#'    - \code{Dcij}: An array of normalized average degrees excluding specific node pairs (\eqn{i, j}) over time (\eqn{p} x \eqn{p} x \eqn{n}), for probability calculations.
 #' @examples
 #' p = 30; n = 20
 #' xi = runif(p, 0.5, 0.9)
 #' eta = runif(p, 0.5, 0.9)
 #' a = c(0.5, 0.5)
 #' b = c(0.3, 0.3)
-#' result = simulateDensity(p, n, xi, eta, a, b)
+#' result = simulateDegree(p, n, xi, eta, a, b)
 #' @references
 #' Chang, J., Fang, Q., Kolaczyk, E. D., MacDonald, P. W., & Yao, Q. (2024). Autoregressive Networks with Dependent Edges.
 #' @export
-simulateDensity <- function(p, n, xi, eta, a, b, burn_in = 200) {
+simulateDegree <- function(p, n, xi, eta, a, b, burn_in = 200) {
   X <- array(0, dim = c(p, p, n + burn_in))  # Network adjacency matrices
-  D <- matrix(0, nrow = p, ncol = n + burn_in)  # Node degree/density matrix
-  Dcij <- array(0, dim = c(p, p, n + burn_in))  # Density excluding nodes i, j
+  D <- matrix(0, nrow = p, ncol = n + burn_in)  # Node degree matrix
+  Dcij <- array(0, dim = c(p, p, n + burn_in))  # Average degree excluding nodes i, j
 
   xiM <- tcrossprod(xi)  # Local parameter matrix for xi
   etaM <- tcrossprod(eta)  # Local parameter matrix for eta
@@ -139,7 +139,7 @@ simulateDensity <- function(p, n, xi, eta, a, b, burn_in = 200) {
         }
       }
     } else {
-      # Update densities D and Dcij for time t-1
+      # Update D and Dcij for time t-1
       for (i in 1:p) {
         D[i, t-1] <- sum(X[i,,t-1]) / (p - 1)
       }

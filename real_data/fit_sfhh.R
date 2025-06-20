@@ -10,6 +10,9 @@ source('realdataFunctions.R')
 # source('Functions.R')
 # source('Estim.R')
 
+# black and white indicator
+bw <- TRUE
+
 # colorblind palete
 cbp <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
@@ -44,22 +47,41 @@ print(mean(fit_sfhh$eta))
 print(quantile(fit_sfhh$xi))
 print(quantile(fit_sfhh$eta))
 
-# histogram of fitted thetas and etas
-pdf(file='fit_plots_sfhh/theta_hist_sfhh.pdf')
-hist(fit_sfhh$xi,20,
-     main=TeX('Histogram of $\\{ \\hat{\\xi}_i \\}_{i=1}^{200}$'),
-     xlab='',col=cbp[3],xlim=c(0,1),cex.main=1.8,cex.lab=1.3)
-abline(v=mean(fit_sfhh$xi),lty=2)
-dev.off()
-# generally small (mean 0.18) with a long right tail
+if(bw){
+  # histogram of fitted thetas and etas
+  pdf(file='fit_plots_sfhh/theta_hist_sfhh_bw.pdf')
+  hist(fit_sfhh$xi,20,
+       main=TeX('Histogram of $\\{ \\hat{\\xi}_i \\}_{i=1}^{200}$'),
+       xlab='',col='darkgrey',xlim=c(0,1),cex.main=1.8,cex.lab=1.3)
+  abline(v=mean(fit_sfhh$xi),lty=2,lwd=2)
+  dev.off()
+  # generally small (mean 0.18) with a long right tail
 
-pdf(file='fit_plots_sfhh/eta_hist_sfhh.pdf')
-hist(fit_sfhh$eta,20,
-     main=TeX('Histogram of $\\{ \\hat{\\eta}_i \\}_{i=1}^{200}$'),
-     xlab='',col=cbp[7],xlim=c(.8,1.4),cex.main=1.8,cex.lab=1.3)
-abline(v=mean(fit_sfhh$eta),lty=2)
-dev.off()
-# larger, less dispersed, mean around 1.08
+  pdf(file='fit_plots_sfhh/eta_hist_sfhh_bw.pdf')
+  hist(fit_sfhh$eta,20,
+       main=TeX('Histogram of $\\{ \\hat{\\eta}_i \\}_{i=1}^{200}$'),
+       xlab='',col='white',xlim=c(.8,1.4),cex.main=1.8,cex.lab=1.3)
+  abline(v=mean(fit_sfhh$eta),lty=2,lwd=2)
+  dev.off()
+  # larger, less dispersed, mean around 1.08
+} else{
+  # histogram of fitted thetas and etas
+  pdf(file='fit_plots_sfhh/theta_hist_sfhh.pdf')
+  hist(fit_sfhh$xi,20,
+       main=TeX('Histogram of $\\{ \\hat{\\xi}_i \\}_{i=1}^{200}$'),
+       xlab='',col=cbp[3],xlim=c(0,1),cex.main=1.8,cex.lab=1.3)
+  abline(v=mean(fit_sfhh$xi),lty=2)
+  dev.off()
+  # generally small (mean 0.18) with a long right tail
+
+  pdf(file='fit_plots_sfhh/eta_hist_sfhh.pdf')
+  hist(fit_sfhh$eta,20,
+       main=TeX('Histogram of $\\{ \\hat{\\eta}_i \\}_{i=1}^{200}$'),
+       xlab='',col=cbp[7],xlim=c(.8,1.4),cex.main=1.8,cex.lab=1.3)
+  abline(v=mean(fit_sfhh$eta),lty=2)
+  dev.off()
+  # larger, less dispersed, mean around 1.08
+}
 
 # xy plot of fitted thetas and etas
 pdf(file='fit_plots_sfhh/theta_scatter_sfhh.pdf')
@@ -84,11 +106,11 @@ n_bic <- (n-1)*choose(p,2)
 
 ics <- matrix(NA,6,2)
 rownames(ics) <- c('Transitivity AR model',
-                    'Global AR model',
-                    'Edge-wise AR model',
-                    'Edge-wise mean model',
-                    'Degree parameter mean model',
-                    'Global mean model')
+                   'Global AR model',
+                   'Edge-wise AR model',
+                   'Edge-wise mean model',
+                   'Degree parameter mean model',
+                   'Global mean model')
 colnames(ics) <- c('AIC','BIC')
 
 # 1. Transitivity AR model
