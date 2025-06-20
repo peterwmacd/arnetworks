@@ -59,7 +59,7 @@ A list containing the estimated parameters:
 }
 \description{
 This function estimates the parameters of a user-specified autoregressive network model
-using an iterative estimation
+using an Iterative Method-of-Moments (IMoM) estimation
 procedure. The method alternates
 between optimizing global and local parameters, capturing edge formation and
 dissolution dynamics in dynamic networks.
@@ -150,7 +150,7 @@ gij <- function(global, stats) {
 result <- estNet(X, fij, gij, statsAlpha, statsBeta, globInitAlpha, globInitBeta,
                  shrGPrm = 0, maxIter = 2)
 # NOTE: small maxIter used to limit example runtime, default value is 100
-# NOTE: The provided examples are for illustration purpose. 
+# NOTE: The provided examples are for illustration purpose.
 #       Larger sample, e.g. p = 50 and n = 100, is recommended for better estimation performance.
 
 }

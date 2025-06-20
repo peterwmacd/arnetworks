@@ -631,3 +631,297 @@ globalMLE_refine_b_et = function(par, al, A1, B1, A2, B2, U, V, ab, xivec, etave
 }
 
 
+
+#######-------------------------- Inference-related functions --------------
+dgammada = function(Xij, Uij, Vij, a, b, xii, xij, etai, etaj){
+  tmp = (1+ exp(a*Uij) +exp(b*Vij))^2
+  return(
+    ((1-Xij)*xii*xij*Uij*exp(a*Uij)*(1+exp(b*Vij))
+     +Xij*etai*etaj*exp(b*Vij)*exp(a*Uij)*Uij)/tmp
+  )
+}
+
+
+dgammadb = function(Xij, Uij, Vij, a, b, xii, xij, etai, etaj){
+  tmp = (1+ exp(a*Uij) +exp(b*Vij))^2
+  return(
+    -(Xij*etai*etaj*Vij*exp(b*Vij)*(1+exp(a*Uij))
+      +(1-Xij)*xii*xij*exp(b*Vij)*exp(a*Uij)*Vij)/tmp
+  )
+}
+
+dgammadxii = function(Xij, Uij, Vij, a, b, xij){
+  tmp = (1+ exp(a*Uij) +exp(b*Vij))
+  return(
+    (1-Xij)*xij*exp(a*Uij)/tmp
+  )
+}
+
+dgammadetai = function(Xij, Uij, Vij, a, b, etaj){
+  tmp = (1+ exp(a*Uij) +exp(b*Vij))
+  return(
+    -Xij*etaj*exp(b*Vij)/tmp
+  )
+}
+
+gamma_root = function(Xij, Uij, Vij, a, b, xii, xij, etai, etaj){
+  tmp = (1+ exp(a*Uij) +exp(b*Vij))
+  alpha = xii*xij * exp(a*Uij)/tmp
+  beta = etai*etaj*exp(b*Vij)/tmp
+  alpha = pmin(pmax(alpha, 0.000001), 1-0.000001)
+  beta  = pmin(pmax(beta, 0.000001), 1-0.000001)
+  gamma = alpha +Xij*(1-alpha - beta)
+  return(
+    (gamma*(1-gamma))^{1/2}
+  )
+}
+
+
+gt2 = function(Xij, Uij, Vij, a, b, xii, xij, etai, etaj){
+  n = length(Xij)
+  tmp = (1+ exp(a*Uij) +exp(b*Vij))
+  alpha = xii*xij * exp(a*Uij)/tmp
+  beta = etai*etaj*exp(b*Vij)/tmp
+  gamma = alpha +Xij[-n]*(1-alpha - beta)
+  return(
+    (Xij[-1]-gamma)/(gamma*(1-gamma))
+  )
+}
+
+
+### Simplified version of estNet for internal use within estTransitivity.R
+estNet_trs = function(X, statsAlpha, statsBeta, globInitAlpha, globInitBeta, shrGPrm,
+                  initXi = NULL, initEta = NULL, tol = 0.01, maxIter = 100){
+  #Preparation:
+  p = dim(X)[1]
+  n = dim(X)[3]
+
+  A1 = X[,,2:n]*(1 - X[,,2:n-1])
+  B1 = (1 - X[,,2:n])*(1 - X[,,2:n-1])
+  A2 = (1 - X[,,2:n])*( X[,,2:n-1])
+  B2 = X[,,2:n]*(X[,,2:n-1])
+
+  # check dimensions for initial Xi,Eta
+  if((!is.null(initXi) & !(length(initXi)==p))){
+    stop('Incorrect dimension for initXi')
+  }
+  if((!is.null(initEta) & !(length(initEta)==p))){
+    stop('Incorrect dimension for initEta')
+  }
+
+  # Check the first three dimensions of statsAlpha and statsBeta
+  expectedDims = c(p, p, n - 1)
+
+  if (!all(dim(statsAlpha)[1:3] == expectedDims)) {
+    stop("The first 3 dimensions of statsAlpha do not match the required dimensions of (p * p * (n - 1)).")
+  }
+
+  if (!all(dim(statsBeta)[1:3] == expectedDims)) {
+    stop("The first 3 dimensions of statsBeta do not match the required dimensions of (p * p * (n - 1)).")
+  }
+
+  ### 0.1  fij function: alpha_ij  = xi_i * xi_j * f_ij
+  fij = function(global, stats){
+    return (exp(global[1]*stats[,,,1])/(1 + exp(global[1]*stats[,,,1]) + exp(global[2]*stats[,,,2])))
+  }
+
+  ### 0.2  gij function: beta_ij  = eta_i * eta_j * g_ij
+  gij = function(global, stats){
+    return ( exp(global[2]*stats[,,,2])/(1 + exp(global[1]*stats[,,,1]) + exp(global[2]*stats[,,,2])))
+  }
+
+  if (is.null(initXi)){
+    xiE = rep(1,p)
+  }else{
+    xiE = initXi
+  }
+
+  if (is.null(initEta)){
+    etaE = rep(1,p)
+  }else{
+    etaE = initEta
+  }
+
+  xiME = outer(xiE, xiE)
+  etaME = outer(etaE, etaE)
+  # Check if loglikelihood is finite
+  fn = - logl(A1, B1, A2, B2, fij, globInitAlpha, statsAlpha, xiME, gij, globInitBeta, statsBeta, etaME)
+  if (!is.finite(fn)) {
+    stop("Please ensure initial values lead to a finite loglikelihood.")
+  }
+
+
+  #Initialization:
+  da = length(globInitAlpha)
+  db = length(globInitBeta)
+
+  gAlphaVal.E0 = gAlphaVal.E = globInitAlpha
+  gBetaVal.E0 = gBetaVal.E = globInitBeta
+
+
+  if ( da < shrGPrm | db < shrGPrm){
+    stop("Please check the length of global parameters.")
+  }
+
+  if (length(dim(statsAlpha))==3){
+    statsAlpha = array(statsAlpha, dim = c(p,p,n-1,1))
+  }
+  if (length(dim(statsBeta))==3){
+    statsBeta = array(statsBeta, dim = c(p,p,n-1,1))
+  }
+
+
+
+    # Updates shared global parameters simultaneously.
+    # Updates unique global parameters specific to alpha simultaneously..
+    # Similarly, updates unique global parameters exclusive to beta simultaneously..
+    if (shrGPrm == 0){
+      for (ix in 1:da){
+        tmp0 = stats::optim(gAlphaVal.E0, globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,da), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = F,updateAlpha = TRUE)
+        gAlphaVal.E0 =  tmp0$par
+      }
+
+      fn1 = - logl_part(A1, B1, fij, gAlphaVal.E0, statsAlpha, xiME)
+
+      for (it in 1: maxIter){
+        xiMax = apply(1/fg_array(fij, gAlphaVal.E0, statsAlpha) , c(1,2), min)
+        for (i in 1:(p-1)){
+          for (j in (i+1):p){
+            xiij = stats::optim(xiME[i,j], localMLE, method = 'L-BFGS-B', Aij = A1[i, j,], Bij = B1[i,j,], fg = fij, global = gAlphaVal.E0, stats = statsAlpha[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(xiMax[i,j]))$par
+            xiME[j,i] = xiME[i,j] = xiij
+          }
+        }
+
+        xiE = locEst(xiME)
+        xiME = tcrossprod(xiE)
+
+        for (ix in 1:da){
+          tmp2 = stats::optim(gAlphaVal.E0, globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,da), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare= F,updateAlpha = TRUE)
+          gAlphaVal.E = tmp2$par
+        }
+
+        fn2 = - logl_part(A1, B1, fij, gAlphaVal.E, statsAlpha, xiME)
+
+
+        if(mean(abs(gAlphaVal.E -gAlphaVal.E0))<tol| fn1<=fn2) {
+          break
+        }else{
+          gAlphaVal.E0 = gAlphaVal.E
+          fn1 = fn2
+        }
+      }
+
+
+      for (ix in 1:db){
+        tmp0 = stats::optim(gBetaVal.E0, globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,db), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = F,updateAlpha = F)
+        gBetaVal.E0 =  tmp0$par
+      }
+
+      fn1 = - logl_part(A2, B2, gij, gBetaVal.E0, statsBeta, etaME)
+
+      for (it in 1: maxIter){
+        etaMax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2),min)
+        for (i in 1:(p-1)){
+          for (j in (i+1):p){
+            etaij = stats::optim(etaME[i,j], localMLE, method = 'L-BFGS-B', Aij = A2[i,j,], Bij = B2[i,j,], fg = gij, global = gBetaVal.E0, stats = statsBeta[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(etaMax[i,j]))$par
+            etaME[j,i] = etaME[i,j] = etaij
+          }
+        }
+
+        etaE = locEst(etaME)
+        etaME = tcrossprod(etaE)
+
+        for (ix in 1:db){
+          tmp2 = stats::optim(gBetaVal.E0, globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,db),  A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = F, updateAlpha = F)
+          gBetaVal.E = tmp2$par
+        }
+
+        fn2 = - logl_part(A2, B2, gij, gBetaVal.E, statsBeta, etaME)
+
+
+        if(mean(abs(gBetaVal.E -gBetaVal.E0))<tol| fn1<=fn2) {
+          break
+        }else{
+          gBetaVal.E0 = gBetaVal.E
+          fn1 = fn2
+        }
+      }
+
+
+    }
+
+
+    if ( shrGPrm>0){
+      tmp0 = stats::optim(gAlphaVal.E0[1:shrGPrm], globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,shrGPrm), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = T,updateAlpha = TRUE)
+      gAlphaVal.E0[1:shrGPrm] = gBetaVal.E0[1:shrGPrm] = tmp0$par
+    }
+
+    if (da > shrGPrm){
+      tmp0 = stats::optim(gAlphaVal.E0[(shrGPrm + 1):da], globalMLE_group, method = "L-BFGS-B", lower = rep(0.01, da-shrGPrm), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = F, updateAlpha = TRUE)
+      gAlphaVal.E0[(shrGPrm + 1):da] =  tmp0$par
+    }
+
+    if (db > shrGPrm){
+      tmp0 = stats::optim(gBetaVal.E0[(shrGPrm + 1):db], globalMLE_group, method = "L-BFGS-B", lower = rep(0.01, db-shrGPrm), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = F, updateAlpha = F)
+      gBetaVal.E0[(shrGPrm + 1):db] =  tmp0$par
+    }
+
+    fn1 = - logl(A1, B1, A2, B2, fij, gAlphaVal.E0, statsAlpha, xiME, gij, gBetaVal.E0, statsBeta, etaME)
+
+
+    for (it in 1: maxIter){
+      xiMax = apply(1/fg_array(fij, gAlphaVal.E0, statsAlpha) , c(1,2),min)
+      etaMax = apply(1/fg_array(gij, gBetaVal.E0, statsBeta) , c(1,2),min)
+      for (i in 1:(p-1)){
+        for (j in (i+1):p){
+          xiij = stats::optim(xiME[i,j], localMLE, method = 'L-BFGS-B', Aij = A1[i, j,], Bij = B1[i,j,], fg = fij, global = gAlphaVal.E0, stats = statsAlpha[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(xiMax[i,j]))$par
+          xiME[j,i] = xiME[i,j] = xiij
+
+          etaij = stats::optim(etaME[i,j], localMLE, method = 'L-BFGS-B', Aij = A2[i,j,], Bij = B2[i,j,], fg = gij, global = gBetaVal.E0, stats = statsBeta[i,j, ,,drop = FALSE], lower  = c(0.01), upper = c(etaMax[i,j]))$par
+          etaME[j,i] = etaME[i,j] = etaij
+        }
+      }
+
+      xiE = locEst(xiME)
+      etaE = locEst(etaME)
+      xiME = tcrossprod(xiE)
+      etaME = tcrossprod(etaE)
+
+      if ( shrGPrm>0){
+        tmp0 = stats::optim(gAlphaVal.E0[1:shrGPrm], globalMLE_group, method = "L-BFGS-B", lower = rep(0.01,shrGPrm), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = T,updateAlpha = TRUE)
+        gAlphaVal.E[1:shrGPrm] = gBetaVal.E[1:shrGPrm] = tmp0$par
+      }
+
+      if (da > shrGPrm){
+        tmp0 = stats::optim(gAlphaVal.E0[(shrGPrm + 1):da], globalMLE_group, method = "L-BFGS-B", lower = rep(0.01, da-shrGPrm), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = F, updateAlpha = TRUE)
+        gAlphaVal.E[(shrGPrm + 1):da] =  tmp0$par
+      }
+
+      if (db > shrGPrm){
+        tmp0 = stats::optim(gBetaVal.E0[(shrGPrm + 1):db], globalMLE_group, method = "L-BFGS-B", lower = rep(0.01, db-shrGPrm), A1 = A1, B1 = B1, A2 = A2, B2 = B2, fij = fij, gAlphaVal = gAlphaVal.E0, statsAlpha = statsAlpha, xiMat = xiME, gij = gij, gBetaVal = gBetaVal.E0, statsBeta = statsBeta, etaMat = etaME, shrGPrm = shrGPrm, updateShare = F, updateAlpha = F)
+        gBetaVal.E[(shrGPrm + 1):db] =  tmp0$par
+      }
+
+      fn2 = - logl(A1, B1, A2, B2, fij, gAlphaVal.E, statsAlpha, xiME, gij, gBetaVal.E, statsBeta, etaME)
+
+
+      if(mean(abs(gAlphaVal.E - gAlphaVal.E0)) + mean(abs(gBetaVal.E - gBetaVal.E0))<tol| fn1<=fn2) {
+        break
+      }else{
+        gAlphaVal.E0 = gAlphaVal.E
+        gBetaVal.E0 = gBetaVal.E
+        fn1 = fn2
+      }
+    }
+
+
+
+  res = list()
+  res$gAlphaVal = gAlphaVal.E0
+  res$gBetaVal = gBetaVal.E0
+  res$xi = xiE
+  res$eta = etaE
+
+  return(res)
+
+}

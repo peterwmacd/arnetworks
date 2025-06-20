@@ -2,7 +2,7 @@
 % Please edit documentation in R/EstTransitivity.R
 \name{estTransitivity}
 \alias{estTransitivity}
-\title{Estimation for Autoregressive Networks with Transitivity}
+\title{Estimation/Inference for Autoregressive Networks with Transitivity}
 \usage{
 estTransitivity(
   X,
@@ -10,9 +10,14 @@ estTransitivity(
   V = NULL,
   initXi = NULL,
   initEta = NULL,
+  tauSeq_a = seq(0.3, 0.4, length = 5),
+  tauSeq_b = seq(0.3, 0.4, length = 5),
+  tauSeq_xi = seq(0.05, 0.06, length = 5),
+  tauSeq_eta = seq(0.05, 0.06, length = 5),
   rSeqGlob = c(10, 2),
-  rSeqLoc = c(0.5, 0.1),
-  verbose = FALSE
+  rSeqLoc = c(0.2, 0.05),
+  verbose = FALSE,
+  doInference = TRUE
 )
 }
 \arguments{
@@ -30,21 +35,41 @@ ignored in the likelihood calculations. If not provided, it will be calculated i
 
 \item{initEta}{Initial values for \eqn{\eta_1, \dots, \eta_p}. It will be calculated internally if NULL.}
 
-\item{rSeqGlob}{A numeric vector specifying the search range for refining global parameters.  Defaults
-to \code{c(10,2)}. Note that \code{rSeqGlob} and \code{rSeqLoc} must have the same length.}
+\item{tauSeq_a}{A numeric vector specifying candidate values for the tuning parameter \eqn{\tau_a}, used in the projection-based refinement of the global parameter \eqn{a}.
+The selected value is multiplied by \eqn{\Delta_n^{1/2}} to form the constraint threshold in the projection step (see Equation 5.10). If a vector of length one is provided, the corresponding value is used directly without selection.
+See also:
+\deqn{
+\hat{\varphi}_l = \arg \min_{\mathbf{u} \in \mathbb{R}^q} \|\mathbf{u}\|_1 \quad \text{s.t.} \quad \left\| \left( \frac{1}{n - m} \sum_{t=m+1}^{n} \nabla_\theta g_t^{(l)}(\tilde{\boldsymbol{\theta}}) \right)^\top \mathbf{u} - \mathbf{e}_l \right\|_\infty \leq \tau \Delta_n^{1/2},
+}
+where \eqn{\tau} is chosen from the \code{tauSeq_*} vector.}
 
-\item{rSeqLoc}{A numeric vector specifying the search range for refining local parameters. Defaults
-to \code{c(0.5,0.1)}.}
+\item{tauSeq_b}{A numeric vector specifying candidate values for the tuning parameter \eqn{\tau_b}, used in the projection-based refinement of the global parameter \eqn{b}.}
 
-\item{verbose}{An indicator, if \code{TRUE} there will be console output providing optimization
-progress. defaults to \code{FALSE}.}
+\item{tauSeq_xi}{A numeric vector specifying candidate values for \eqn{\tau_{\xi}}, used to refine the local formation parameters \eqn{\xi_1, \dots, \xi_p}. Selection is performed individually for each node \eqn{i \in \{1, \dots, p\}}.}
+
+\item{tauSeq_eta}{A numeric vector specifying candidate values for \eqn{\tau_{\eta}}, used to refine the local dissolution parameters \eqn{\eta_1, \dots, \eta_p}. Selection is performed individually for each node \eqn{i \in \{1, \dots, p\}}.}
+
+\item{rSeqGlob}{A numeric vector of length two specifying the local search radii used in the two-stage refinement of the global parameters \eqn{a} and \eqn{b}. Each value defines the size of the neighborhood around the initial estimate within which the final refinement is performed. Defaults to \code{c(10, 2)}.}
+
+\item{rSeqLoc}{A numeric vector of length two specifying the local search radii used in the two-stage refinement of the local parameters \eqn{\xi_1, \dots, \xi_p} and \eqn{\eta_1, \dots, \eta_p}. Defaults to \code{c(0.2, 0.05)}.}
+
+\item{verbose}{Logical. If \code{TRUE}, there will be console output providing optimization
+progress. Defaults to \code{FALSE}.}
+
+\item{doInference}{Logical. If \code{TRUE}, the function performs inference by computing the asymptotic standard errors for all estimated parameters. Defaults to \code{TRUE}.}
 }
 \value{
-A list containing the estimated parameters:
+A list containing the estimated parameters and optional inference results:
 \itemize{
-\item \code{gVal}: Estimated global parameters \eqn{a, b}.
-\item \code{xi}: Estimated values of \eqn{\xi_1, \dots, \xi_p}.
-\item \code{eta}: Estimated values of \eqn{\eta_1, \dots, \eta_p}.
+\item \code{gVal_init}: Initial global parameter estimates \eqn{(a, b)}.
+\item \code{xi_init}: Initial local formation parameter estimates \eqn{(\xi_1, \dots, \xi_p)}.
+\item \code{eta_init}: Initial local dissolution parameter estimates \eqn{(\eta_1, \dots, \eta_p)}.
+\item \code{gVal}: Refined global parameter estimates \eqn{(a, b)}.
+\item \code{xi}: Refined local formation parameter estimates \eqn{(\xi_1, \dots, \xi_p)}.
+\item \code{eta}: Refined local dissolution parameter estimates \eqn{(\eta_1, \dots, \eta_p)}.
+\item \code{se_estimates}: A numeric vector of length \eqn{2 + 2p} containing the asymptotic standard errors for the final parameter estimates \eqn{\hat{\theta}}. The entries correspond to:
+\eqn{\hat{a}, \hat{b}, \hat{\xi}_1, \dots, \hat{\xi}_p, \hat{\eta}_1, \dots, \hat{\eta}_p}.
+Returned only if \code{doInference = TRUE}.
 }
 }
 \description{
@@ -70,23 +95,22 @@ is the normalized number of disjoint neighbours of nodes \eqn{i} and \eqn{j} in 
 
 Estimation Procedure:
 \enumerate{
-\item \strong{Initialization}: Sets initial values for local parameters.
-\item \strong{Global Optimization}: Utilizes initialized local parameters within a global
+\item \strong{Initialization}: Set initial values for local parameters.
+\item \strong{Global Optimization}: Utilize initialized local parameters within a global
 log-likelihood function, optimizing it through a quasi-Newton method to
 estimate global parameters.
 \item \strong{Local Optimization}: With global parameters estimated in the previous stage, local
 log-likelihood functions are maximized through a Newton method to update local parameter estimates.
-\item \strong{Refinement}: Incorporates a projection-based refinement process to improve the
-previous maximum likelihood estimates (MLEs). The tuning parameter \eqn{\tau}
-is set internally to \eqn{0.5 \Delta_n^{1/2}} for local parameters and \eqn{0.01 \Delta_n^{1/2}}
-for global parameters, a strategy empirically validated through extensive numerical
-studies documented in Chang et al. (2024).
+\item \strong{IMoM Estimation}: Apply an efficient Iterative Method-of-Moments (IMoM) estimation to reduce the sensitivity to initial values.
+\item \strong{Refinement}: Incorporate a projection-based refinement process to improve the
+previous maximum likelihood estimates (MLEs). The tuning parameters \eqn{\tau} are selected internally as documented in Chang et al. (2024).
 }
 }
 \examples{
-p = 20; n = 20
-xi = rep(0.7, p); eta = rep(0.8, p)
-a = 30; b = 15
+p = 20; n = 30
+xi = rep(0.8, p); eta = rep(0.9, p)
+a = 25; b = 15
+initXi = runif(p,0,1); initEta =runif(p,0,1)
 
 # Simulate data using simulateTransitivity function
 simulated_data = simulateTransitivity(p, n, xi, eta, a, b)
@@ -94,8 +118,7 @@ X = simulated_data$X
 U = simulated_data$U
 V = simulated_data$V
 
-result = estTransitivity(X, U, V, rSeqGlob=10, rSeqLoc=0.5)
-# NOTE: short rSeq's used to limit example runtime, default has length 2
+result = estTransitivity(X, U, V, initXi, initEta, tauSeq_a = seq(0.3, 0.4, 2), tauSeq_b = seq(0.3, 0.4, 2), tauSeq_xi = seq(0.05, 0.06, 2), tauSeq_eta = seq(0.05, 0.06, 2))
 }
 \references{
 Chang, J., Fang, Q., Kolaczyk, E. D., MacDonald, P. W., & Yao, Q. (2024). Autoregressive Networks with Dependent Edges.
