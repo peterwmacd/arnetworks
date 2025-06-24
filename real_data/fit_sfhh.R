@@ -11,7 +11,7 @@ source('realdataFunctions.R')
 # source('Estim.R')
 
 # black and white indicator
-bw <- TRUE
+bw <- FALSE
 
 # colorblind palete
 cbp <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
@@ -167,7 +167,7 @@ ics[6,2] <- log(n_bic) - 2*ll_global
 # reorder for presentation
 ics <- ics[c(1,2,3,5,6,4),]
 
-saveRDS(ics,file='data/ics_sfhh.rds')
+saveRDS(ics,file='data/ics_sfhh_imom.rds')
 
 #### link prediction ####
 
