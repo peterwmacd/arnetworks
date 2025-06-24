@@ -26,15 +26,19 @@ UV_sfhh <- arnetworks::statsTransitivity(X_sfhh)
 # mean(V) ~ 2.2, 26% of entries are zero (still quite small, perhaps shows more
 # modularity?)
 
-fit_sfhh <- arnetworks::estTransitivity(X_sfhh,verbose=TRUE)
+system.time(fit_sfhh <- arnetworks::estTransitivity(X_sfhh,
+                                        tauSeq_a = 0.3, tauSeq_b = 0.3,
+                                        tauSeq_xi = 0.05, tauSeq_eta = 0.05,
+                                        verbose=TRUE,doInference=FALSE))
+# runs in ~25 minutes
 
 # save fitted model
-saveRDS(fit_sfhh,file='data/fit_sfhh.rds')
+saveRDS(fit_sfhh,file='data/fit_sfhh_imom.rds')
 
 #### Model interpretation ####
 
 # load model
-fit_sfhh <- readRDS('data/fit_sfhh.rds')
+fit_sfhh <- readRDS('data/fit_sfhh_imom.rds')
 
 # estimates of a,b
 print(fit_sfhh$gVal)

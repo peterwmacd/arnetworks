@@ -29,24 +29,36 @@ n <- dim(X_man)[3]
 X_man1 <- X_man[,,1:13]
 UV_man1 <- arnetworks::statsTransitivity(X_man1)
 n1 <- dim(X_man1)[3]
-fit_man1 <- arnetworks::estTransitivity(X_man1,verbose=TRUE)
+system.time(fit_man1 <- arnetworks::estTransitivity(X_man1,
+                                        tauSeq_a = 0.3, tauSeq_b = 0.3,
+                                        tauSeq_xi = 0.05, tauSeq_eta = 0.05,
+                                        verbose=TRUE,doInference=FALSE))
+# runs in ~5 minutes
 # save fitted model
-saveRDS(fit_man1,file='data/fit_man1.rds')
+saveRDS(fit_man1,file='data/fit_man1_imom.rds')
 
 # second regime snapshots 14 to 39
 X_man2 <- X_man[,,14:39]
 UV_man2 <- arnetworks::statsTransitivity(X_man2)
 n2 <- dim(X_man2)[3]
-fit_man2 <- arnetworks::estTransitivity(X_man2,verbose=TRUE)
+system.time(fit_man2 <- arnetworks::estTransitivity(X_man2,
+                                                    tauSeq_a = 0.3, tauSeq_b = 0.3,
+                                                    tauSeq_xi = 0.05, tauSeq_eta = 0.05,
+                                                    verbose=TRUE,doInference=FALSE))
+# runs in ~6 minutes
 # save fitted model
-saveRDS(fit_man2,file='data/fit_man2.rds')
+saveRDS(fit_man2,file='data/fit_man2_imom.rds')
 
 #### Model interpretation ####
 
 # load models
 # fit_man <- readRDS('data/fit_man.rds')
-fit_man1 <- readRDS('data/fit_man1.rds')
-fit_man2 <- readRDS('data/fit_man2.rds')
+
+#fit_man1 <- readRDS('data/fit_man1.rds')
+fit_man1 <- readRDS('data/fit_man1_imom.rds')
+
+#fit_man2 <- readRDS('data/fit_man2.rds')
+fit_man2 <- readRDS('data/fit_man2_imom.rds')
 
 # first regime
 
@@ -116,7 +128,7 @@ if(bw){
   par(mar=c(4,5.5,4,4))
   plot(fit_man1$xi,fit_man1$eta,
        main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-       xlim=c(0,1.5),ylim=c(0,1.5),cex=.8*levels,pch=pchvec[levels],cex.lab=1.8,cex.main=1.5)
+       xlim=c(0,2.6),ylim=c(0,1.5),cex=.8*levels,pch=pchvec[levels],cex.lab=1.8,cex.main=1.5)
   abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
 
   dev.off()
@@ -126,7 +138,7 @@ if(bw){
   par(mar=c(4,5.5,4,4))
   plot(fit_man1$xi,fit_man1$eta,
        main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-       xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8,cex.main=1.5)
+       xlim=c(0,2.6),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8,cex.main=1.5)
   abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
   dev.off()
 }
@@ -144,16 +156,16 @@ if(bw){
   pdf(file='fit_plots_man/theta_scatter_man2_bw.pdf')
   par(mar=c(4,5.5,4,4))
   plot(fit_man2$xi,fit_man2$eta,
-       main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-       xlim=c(0,1.5),ylim=c(0,1.5),cex=.8*levels,pch=pchvec[levels],cex.lab=1.8,cex.main=1.5)
+       main='Period 2',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
+       xlim=c(0,2.6),ylim=c(0,1.5),cex=.8*levels,pch=pchvec[levels],cex.lab=1.8,cex.main=1.5)
   abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
   dev.off()
 } else{
   pdf(file='fit_plots_man/theta_scatter_man2.pdf')
   par(mar=c(4,5.5,4,4))
   plot(fit_man2$xi,fit_man2$eta,
-       main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-       xlim=c(0,1.5),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8,cex.main=1.5)
+       main='Period 2',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
+       xlim=c(0,2.6),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8,cex.main=1.5)
   abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
   dev.off()
 }
@@ -181,13 +193,16 @@ n_train <- 10:23
 fit_man_reduce <- fit_man_simple <- fit_man_edge <- fit_man_edgemod <- list()
 length(fit_man_reduce) <- length(fit_man_simple) <- length(fit_man_edge) <- length(n_train)
 for(i in 1:length(n_train)){
-  fit_man_reduce[[i]] <- arnetworks::estTransitivity(X_man2[,,1:n_train[i]],verbose=FALSE)
+  fit_man_reduce[[i]] <- arnetworks::estTransitivity(X_man2[,,1:n_train[i]],
+                                                     tauSeq_a = 0.3, tauSeq_b = 0.3,
+                                                     tauSeq_xi = 0.05, tauSeq_eta = 0.05,
+                                                     verbose=TRUE,doInference=FALSE)
   fit_man_simple[[i]] <- simple_ar_fit(X_man2[,,1:n_train[i]])
   fit_man_edge[[i]] <- edge_ar_fit(X_man2[,,1:n_train[i]])
   fit_man_edgemod[[i]] <- edge_ar_fit_modified(X_man2[,,1:n_train[i]])
   print(paste0('models ',i,' of ',length(n_train)))
 }
-# runs in ~45 minutes
+# runs in ~60-70 minutes
 
 # temporary code to update just one list
 # fit_man_edgemod <- list()
@@ -196,13 +211,13 @@ for(i in 1:length(n_train)){
 # }
 
 # save reduced model fits
-saveRDS(fit_man_reduce,file='data/fit_man2_reduce.rds')
+saveRDS(fit_man_reduce,file='data/fit_man2_reduce_imom.rds')
 saveRDS(fit_man_simple,file='data/fit_man2_simple.rds')
 saveRDS(fit_man_edge,file='data/fit_man2_edgewise.rds')
 saveRDS(fit_man_edgemod,file='data/fit_man2_edgewise_modified.rds')
 
 # load reduced model fits
-fit_man_reduce <- readRDS(file='data/fit_man2_reduce.rds')
+fit_man_reduce <- readRDS(file='data/fit_man2_reduce_imom.rds')
 fit_man_simple <- readRDS(file='data/fit_man2_simple.rds')
 fit_man_edge <- readRDS(file='data/fit_man2_edgewise.rds')
 fit_man_edgemod <- readRDS(file='data/fit_man2_edgewise_modified.rds')
@@ -390,7 +405,7 @@ ics1[6,2] <- log(n1_bic) - 2*ll_global
 # reorder for presentation
 ics1 <- ics1[c(1,2,3,5,6,4),]
 
-saveRDS(ics1,file='data/ics_man1.rds')
+saveRDS(ics1,file='data/ics_man1_imom.rds')
 
 # second regime
 n2_bic <- (n2-1)*choose(p,2)
@@ -454,5 +469,5 @@ ics2[6,2] <- log(n2_bic) - 2*ll_global
 # reorder for presentation
 ics2 <- ics2[c(1,2,3,5,6,4),]
 
-saveRDS(ics2,file='data/ics_man2.rds')
+saveRDS(ics2,file='data/ics_man2_imom.rds')
 
