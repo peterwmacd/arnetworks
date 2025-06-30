@@ -157,6 +157,11 @@ plot(dens,type='b',main='Edge density',
      ylab='Edge density',xlab='Week',cex.main=1.5,cex.lab=1.4)
 dev.off()
 
+pdf('data_plots_man/man_dens_noline.pdf',width=10,height=5)
+plot(dens,type='p',main='Edge density (weekly)',ylim=c(0,0.16),
+     ylab='Edge density',xlab='Week',cex.main=1.5,cex.lab=1.4)
+dev.off()
+
 # now edge density on the subnetwork by day
 dens <- apply(X_day,3,mean)
 
@@ -222,6 +227,18 @@ if(bw){
   dev.off()
 }
 
+pdf('data_plots_man/man_gr_noline.pdf',width=10,height=5)
+plot(grt_p2,type='p',col=cbp[3],main='Edge formation (weekly)',
+     ylim=c(0,0.1),ylab='Formation rate',xlab='Week',cex.main=1.5,cex.lab=1.4)
+#lines(dst_p2,type='b',col=cbp[7])
+dev.off()
+
+pdf('data_plots_man/man_ds_noline.pdf',width=10,height=5)
+plot(dst_p2,type='p',col=cbp[7],main='Edge dissolution (weekly)',
+     ylim=c(0,0.1),ylab='Dissolution rate',xlab='Week',cex.main=1.5,cex.lab=1.4)
+#lines(dst_p2,type='b',col=cbp[7])
+dev.off()
+
 # normalized growth and dissolution
 grow_norm <- grow_sub
 grow_norm[(X[,,-n]==1)] <- NA
@@ -286,10 +303,28 @@ dst_p2_day <- apply(diss_day,3,sum)/(p*(p-1))
 
 pdf('data_plots_man/man_grds_p2_day.pdf',width=10,height=5)
 plot(grt_p2_day,type='p',col=cbp[3],main='Dynamic activity (daily)',
-     ylim=c(0,0.1),ylab='Dynamic activity - form/dissolve',xlab='Week',cex.main=1.5,cex.lab=1.4,cex=0.8)
+     ylim=c(0,0.1),ylab='Dynamic activity - form/dissolve',xlab='Day',cex.main=1.5,cex.lab=1.4,cex=0.8)
 lines(dst_p2_day,type='p',col=cbp[7],cex=0.8)
 abline(h=mean(grt_p2_day),col=cbp[3],lty=3)
 abline(h=mean(dst_p2_day),col=cbp[7],lty=3)
+#abline(h=1,lty=2)
+dev.off()
+
+pdf('data_plots_man/man_gr_day_noline.pdf',width=10,height=5)
+plot(grt_p2_day,type='p',col=cbp[3],main='Edge formation (daily)',
+     ylim=c(0,0.1),ylab='Formation rate',xlab='Day',cex.main=1.5,cex.lab=1.4,cex=0.8)
+#lines(dst_p2_day,type='p',col=cbp[7],cex=0.8)
+#abline(h=mean(grt_p2_day),col=cbp[3],lty=3)
+#abline(h=mean(dst_p2_day),col=cbp[7],lty=3)
+#abline(h=1,lty=2)
+dev.off()
+
+pdf('data_plots_man/man_ds_day_noline.pdf',width=10,height=5)
+plot(dst_p2_day,type='p',col=cbp[7],main='Edge dissolution (daily)',
+     ylim=c(0,0.1),ylab='Dissolution rate',xlab='Day',cex.main=1.5,cex.lab=1.4,cex=0.8)
+#lines(dst_p2_day,type='p',col=cbp[7],cex=0.8)
+#abline(h=mean(grt_p2_day),col=cbp[3],lty=3)
+#abline(h=mean(dst_p2_day),col=cbp[7],lty=3)
 #abline(h=1,lty=2)
 dev.off()
 
