@@ -463,6 +463,82 @@ if(bw){
   dev.off()
 }
 
+#### Transitivity metrics by day ####
+
+# look at grown edge probability, plot against number of common neighbors
+# look at dissolved edge probability, plot against previous number of
+# common non-neighbors
+
+gr_cn_day <- NULL
+for(tt in 2:n_day){
+  prev_cn_day <- X_day[,,tt-1]%*%X_day[,,tt-1]
+  # growing edges
+  grow_ind_day <- as.logical((1-X_day[,,tt-1])*X_day[,,tt])
+  if(sum(grow_ind_day) > 0){
+    gr_cn_day <- rbind(gr_cn_day,cbind(1,prev_cn_day[grow_ind_day]))
+  }
+  # non-growing edges
+  nongrow_ind_day <- as.logical(hollowize((1-X_day[,,tt-1])*(1-X_day[,,tt])))
+  if(sum(nongrow_ind_day)>0){
+    gr_cn_day <- rbind(gr_cn_day,cbind(0,prev_cn_day[nongrow_ind_day]))
+  }
+}
+
+gr_cn_summary_day <- table(gr_cn_day[,1],gr_cn_day[,2])
+# rows by indicator of the growth of an edge
+# columns by number of previous common neighbors
+
+# summarize this table
+pdf('data_plots_man/man_grtrans_day.pdf',width=7,height=5)
+plot(as.numeric(colnames(gr_cn_summary_day)),
+     gr_cn_summary_day[2,]/colSums(gr_cn_summary_day),
+     type='p',pch=16,cex=(3+log(colSums(gr_cn_summary_day)))/6,col=cbp[3],
+     main='Transitivity effects on grown edges (daily data)',cex.main=1.5,
+     xlab='Number of common neighbours',ylab='Relative freq. formed edge',cex.lab=1.4,ylim=c(0,0.16))
+legend(x=15,y=0.155,pch=16,col=cbp[3],title='Sample size',
+       pt.cex=(3+log(c(1e4,1e2,1)))/6,legend=c(TeX('$10^4$'),TeX('$10^2$'),TeX('$1$')))
+#abline(h=0,lty=2)
+#abline(h=1,lty=2)
+dev.off()
+
+# same for dissolving edges
+ds_ncn_day <- NULL
+for(tt in 2:n_day){
+  prev_ncn_day <- X_day[,,tt-1] %*% hollowize(1-X_day[,,tt-1])
+  # symmetrize
+  prev_ncn_day <- .5*(prev_ncn_day + t(prev_ncn_day))
+  # dissolving edges
+  dissolve_ind_day <- as.logical(X_day[,,tt-1]*(1-X_day[,,tt]))
+  if(sum(dissolve_ind_day) > 0){
+    ds_ncn_day <- rbind(ds_ncn_day,cbind(1,prev_ncn_day[dissolve_ind_day]))
+  }
+  # non-growing edges
+  nondissolve_ind_day <- as.logical(X_day[,,tt-1]*X_day[,,tt])
+  if(sum(nondissolve_ind_day)>0){
+    ds_ncn_day <- rbind(ds_ncn_day,cbind(0,prev_ncn_day[nondissolve_ind_day]))
+  }
+}
+
+ds_ncn_summary_day <- table(ds_ncn_day[,1],ds_ncn_day[,2])
+# rows by indicator of the growth of an edge
+# columns by number of previous common neighbors
+
+# only look at columns with enough sample size (>50)
+#ds_ncn_summary <- ds_ncn_summary[,colSums(ds_ncn_summary) > 50]
+
+# summarize this table
+pdf('data_plots_man/man_dstrans_day.pdf',width=7,height=5)
+plot(as.numeric(colnames(ds_ncn_summary_day)),
+     ds_ncn_summary_day[2,]/colSums(ds_ncn_summary_day),
+     type='p',pch=16,cex=(3+log(colSums(ds_ncn_summary_day)))/6,col=cbp[7],
+     main='Transitivity effects on dissolved edges (daily data)',cex.main=1.5,
+     xlab='Number of disjoint neighbours',ylab='Relative freq. dissolved edge',cex.lab=1.4,ylim=c(0,1))
+legend(x=0,y=0.4,pch=16,col=cbp[7],title='Sample size',
+       pt.cex=(3+log(c(1e4,1e2,1)))/6,legend=c(TeX('$10^4$'),TeX('$10^2$'),TeX('$1$')))
+# abline(h=0,lty=2)
+# abline(h=1,lty=2)
+dev.off()
+
 #### Degree heterogeneity ####
 
 # construct the matrices like in the paper
