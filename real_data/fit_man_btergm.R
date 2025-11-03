@@ -7,7 +7,6 @@ library(devtools)
 library(pROC)
 library(latex2exp)
 library(btergm)
-library(tergm)
 
 # source code from arnetworks package
 load_all()
@@ -41,43 +40,21 @@ n2 <- dim(X_man2)[3]
 net1 <- list()
 U1 <- list()
 V1 <- list()
-for (ii in 2:n1) {
+for (ii in 1:n1) {
   # store networks
-    nw <- network::network(X_man1[,,ii],directed=FALSE)  # create network object
-    #net1[[(ii-1)]] <- nw          # add network to the list
-    #Unw <- network::network(UV_man1$U[,,ii],directed=FALSE)
-    Unw <- UV_man1$U[,,ii-1]
-    U1[[(ii-1)]] <- Unw
-    #Vnw <- network::network(UV_man1$V[,,ii])
-    Vnw <- UV_man1$V[,,ii-1]
-    V1[[(ii-1)]] <- Vnw
-
-    # attach previous snapshot U ~ CN and V ~ NCN as edge attributes to nw object?
-    nw %n% 'CN' <- Unw
-    nw %n% 'NCN' <- Vnw
-    # works with a static edgecov/network
-
+  if(ii > 1){
+    nw <- network::network(X_man1[,,ii-1],directed=FALSE)  # create network object
     net1[[(ii-1)]] <- nw          # add network to the list
+  }
+  if(ii < n1){
+    U1[[ii]] <- UV_man1$U[,,ii]
+    V1[[ii]] <- UV_man1$V[,,ii]
+  }
 }
 
-netsn1 <- NetSeries(net1)
-
 # fit with just U (common neighbours) effect
-fit1 <- mtergm(net1 ~ sociality)
-              #estimate='CMLE')
+fit1 <- mtergm(net1 ~ edges + edgecov(U1))
 summary(fit1)
-# gives up when sociality is added --- seems to be fitting 12*106 sociality parameters
-# for each node in each snapshot
-
-# edge/density-only model estimates about 5% of non-active edges form, about 50% of
-# active edges dissolve; fits with equilibrium about 10% edge density
-
-# probably doesn't need both edges and sociality? ie intercept baked in to sociality effects; sociality
-# can only be fit with full network sequence, with single snapshots we get \infty-parameters due to
-# some edges with 0 degree(?)
-
-# works with a static edgecov matrix
-# when specified as an attribute from net1, breaks
 
 # tergm for second regime
 
