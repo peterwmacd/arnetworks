@@ -166,8 +166,9 @@ dev.off()
 dens <- apply(X_day,3,mean)
 
 pdf('data_plots_man/man_day_dens.pdf',width=10,height=5)
-plot(dens,type='p',main='Edge density (daily)',
+plot(dens,type='l',main='Edge density (daily)',
      ylab='Edge density',xlab='Day',cex.main=1.5,cex.lab=1.4,cex=0.8)
+lines(dens,cex=0.75,type='p')
 dev.off()
 
 # days of the week data
@@ -310,18 +311,20 @@ abline(h=mean(dst_p2_day),col=cbp[7],lty=3)
 #abline(h=1,lty=2)
 dev.off()
 
-pdf('data_plots_man/man_gr_day_noline.pdf',width=10,height=5)
-plot(grt_p2_day,type='p',col=cbp[3],main='Edge formation (daily)',
+pdf('data_plots_man/man_gr_day.pdf',width=10,height=5)
+plot(grt_p2_day,type='l',col=cbp[3],main='Edge formation (daily)',
      ylim=c(0,0.1),ylab='Formation rate',xlab='Day',cex.main=1.5,cex.lab=1.4,cex=0.8)
+lines(grt_p2_day,col=cbp[3],type='p',cex=0.75)
 #lines(dst_p2_day,type='p',col=cbp[7],cex=0.8)
 #abline(h=mean(grt_p2_day),col=cbp[3],lty=3)
 #abline(h=mean(dst_p2_day),col=cbp[7],lty=3)
 #abline(h=1,lty=2)
 dev.off()
 
-pdf('data_plots_man/man_ds_day_noline.pdf',width=10,height=5)
-plot(dst_p2_day,type='p',col=cbp[7],main='Edge dissolution (daily)',
+pdf('data_plots_man/man_ds_day.pdf',width=10,height=5)
+plot(dst_p2_day,type='l',col=cbp[7],main='Edge dissolution (daily)',
      ylim=c(0,0.1),ylab='Dissolution rate',xlab='Day',cex.main=1.5,cex.lab=1.4,cex=0.8)
+lines(dst_p2_day,col=cbp[7],type='p',cex=0.75)
 #lines(dst_p2_day,type='p',col=cbp[7],cex=0.8)
 #abline(h=mean(grt_p2_day),col=cbp[3],lty=3)
 #abline(h=mean(dst_p2_day),col=cbp[7],lty=3)
