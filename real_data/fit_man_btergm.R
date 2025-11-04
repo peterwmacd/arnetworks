@@ -92,9 +92,9 @@ summary(fit2)
 
 # first regime
 # allocate space for coefficients
-coef_ecov <- pval_ecov <- se_ecov <- matrix(NA,n-1,4)
+coef_ecov <- pval_ecov <- se_ecov <- matrix(NA,n-1,6)
 for(ii in 1:(n-1)){
-  temp <- tergm(list(nets[[ii]],nets[[(ii+1)]]) ~ Form(~edges + edgecov(U[[ii]])) + Persist(~edges + edgecov(V[[ii]])),estimate='CMLE')
+  temp <- tergm(list(nets[[ii]],nets[[(ii+1)]]) ~ Form(~edges + edgecov(U[[ii]]) + edgecov(V[[ii]])) + Persist(~edges + edgecov(U[[ii]])+ edgecov(V[[ii]])),estimate='CMLE')
   coef_ecov[ii,] <- coef(temp)
   se_ecov[ii,] <- summary(temp)$coefficients[,2]
   pval_ecov[ii,] <- summary(temp)$coefficients[,5]
@@ -105,9 +105,20 @@ for(ii in 1:(n-1)){
 # remove 13 and 14 for the regime change
 
 # plot over time
-matplot(coef_ecov,ylim=c(-10,60),xlab='Week',ylab='Coef. estimate',
-        lty=1,pch=16,type='b')
-matplot(coef_ecov - 2*se_ecov,type='p',lty=1,pch=12,add=TRUE)
+pdf('fit_plots_man/tergm_sequence.pdf',width=8,height=6)
+matplot(c(1:12,15:(n-1)),coef_ecov[c(1:12,15:(n-1)),],ylim=c(-30,60),xlab='Week',ylab='Coef. estimate',
+        lty=1,pch=16,type='p',main='TERGM transition model parameter estimates')
+#matplot(coef_ecov - 2*se_ecov,type='p',lty=1,pch=12,add=TRUE)
+abline(v=13.5,lty=2) # cover up transition between regimes
+# add legend and label regimes
+legend(x=5,y=-10,ncol=3,col=1:6,lty=0,pch=16,legend=c('Form edges',
+                                                      'Form U',
+                                                      'Form V',
+                                                      'Persist edges',
+                                                      'Persist U',
+                                                      'Persist V'))
+text(x=c(3,22.5),y=60,labels=c('Period 1','Period 2'),pos=4)
+dev.off()
 
 # fitting two STERGMs with edge + sociality
 
@@ -116,14 +127,25 @@ netsn1 <- NetSeries(net1); netsn2 <- NetSeries(net2)
 fit1soc <- tergm(net1 ~ Form(~edges + sociality) + Persist(~edges + sociality),estimate='CMLE')
 fit2soc <- tergm(net2 ~ Form(~edges + sociality) + Persist(~edges + sociality),estimate='CMLE')
 
+# NOTE: fitting with sociality and triangles, no longer fast with pseudolikelihood, requires slow
+# MCMLE approach ... running started ~ 11:40AM for small (n=12) regime 1, still on iteration 1 after 5 minutes
+
 # load and compare to arnetworks heterogeneity parameters
 
 # regime 1
+pdf('fit_plots_man/tergm_degree.pdf',width=10,height=8)
+par(mfrow=c(2,2))
 fit1_arnet <- readRDS('data/fit_man1_imom.rds')
-# plot xi-hat against formation sociality
-plot(fit1_arnet$xi,c(0,coef(fit1soc)[2:106]))
+# plot xi-hat against formation socialitys
+plot(fit1_arnet$xi,c(0,coef(fit1soc)[2:106]),
+     xlab='AR network xi estimate',
+     ylab='TERGM sociality estimate',
+     main='Formation degree parameter estimates, period 1')
 # plot eta-hat against persistence sociality
-plot(fit1_arnet$eta,c(0,coef(fit1soc)[108:212]))
+plot(fit1_arnet$eta,c(0,coef(fit1soc)[108:212]),
+     xlab='AR network eta estimate',
+     ylab='TERGM sociality estimate',
+     main='Dissolution degree parameter estimates, period 1')
 
 # NOTE: bad node is 80, it is extremely outlying in this plot. It is farther from the bulk of
 # degree vs sociality than degree vs xi, and it is indeed below the bulk of degree vs triangle participation,
@@ -132,11 +154,26 @@ plot(fit1_arnet$eta,c(0,coef(fit1soc)[108:212]))
 # regime 2
 fit2_arnet <- readRDS('data/fit_man2_imom.rds')
 # plot xi-hat against formation sociality
-plot(fit2_arnet$xi[-86],c(0,coef(fit2soc)[2:106])[-86])
+plot(fit2_arnet$xi[-86],c(0,coef(fit2soc)[2:106])[-86],
+     xlab='AR network xi estimate',
+     ylab='TERGM sociality estimate',
+     main='Formation degree parameter estimates, period 2')
 # plot eta-hat against persistence sociality
-plot(fit2_arnet$eta[-86],c(0,coef(fit2soc)[108:212])[-86])
+plot(fit2_arnet$eta[-86],c(0,coef(fit2soc)[108:212])[-86],
+     xlab='AR network eta estimate',
+     ylab='TERGM sociality estimate',
+     main='Dissolution degree parameter estimates, period 2')
+dev.off()
 
 # NOTE: MPLE does not exist for period 2, should refit with one sociality parameter ignored (node 86), remaining parameters
-# are essentially the same
+# are essentially the same so we leave as is
 
 # fitting two STERGMs with edge + sociality + triangle + threepath
+
+# currently won't converge, try to run overnight...
+#fit1tri <- tergm(netsn1 ~ Form(~edges + triangle + threetrail) + Persist(~edges + triangle + threetrail),estimate='CMLE')
+#fit2tri <- tergm(netsn2 ~ Form(~edges + triangle + threetrail) + Persist(~edges + triangle + threetrail),estimate='CMLE')
+
+# started ~11:47AM -- still running at ~1PM, iteration 7/60 -- still at iteration 7 at 2PM, seems to have stalled?
+# restarted ~2:10PM *warning for threepath name
+# restarted ~2:17PM with NetSeries object, and installed Rglpk for speed **stalled again at 7 iterations?
