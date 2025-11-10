@@ -105,7 +105,7 @@ for(ii in 1:(n-1)){
 # remove 13 and 14 to account for the period change
 
 # plot over time
-pdf('fit_plots_man/tergm_sequence.pdf',width=8,height=6)
+pdf('fit_plots_man/tergm_sequence.pdf',width=8,height=8)
 matplot(c(1:12,15:(n-1)),coef_ecov[c(1:12,15:(n-1)),],ylim=c(-30,60),xlab='Week',ylab='Coef. estimate',
         lty=1,pch=16,type='p',main='TERGM transition model parameter estimates')
 #matplot(coef_ecov - 2*se_ecov,type='p',lty=1,pch=12,add=TRUE)
