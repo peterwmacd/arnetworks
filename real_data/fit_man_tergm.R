@@ -1,7 +1,7 @@
 # Comparitive STERGM analysis of manufacturing email data
 
 # libraries
-library(arnetworks)
+#library(arnetworks)
 library(latex2exp)
 library(statnet) # includes packages tergm, network
 
