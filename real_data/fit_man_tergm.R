@@ -36,6 +36,32 @@ for(ii in 1:n){
   V[[ii]] <- UV_man$V[,,ii]
 }
 
+# sublists for individual period models
+
+# period 1
+net1 <- list()
+U1 <- list()
+V1 <- list()
+for (ii in 2:n1) {
+  # store networks
+  nw <- network::network(X_man1[,,ii],directed=FALSE)  # create network object
+  net1[[(ii-1)]] <- nw          # add network to the list
+  U1[[(ii-1)]] <- UV_man1$U[,,ii-1]
+  V1[[(ii-1)]] <- UV_man1$V[,,ii-1]
+}
+
+# period 2
+net2 <- list()
+U2 <- list()
+V2 <- list()
+for (ii in 2:n2) {
+  # store networks
+  nw <- network::network(X_man2[,,ii],directed=FALSE)  # create network object
+  net2[[(ii-1)]] <- nw          # add network to the list
+  U2[[(ii-1)]] <- UV_man2$U[,,ii-1]
+  V2[[(ii-1)]] <- UV_man2$V[,,ii-1]
+}
+
 #### (2) tergm fitting ####
 
 # fitting a sequence of STERGMs with edge + edgecov
@@ -83,7 +109,7 @@ pdf('real_data/fit_plots_man/tergm_degree.pdf',width=10,height=8)
 par(mfrow=c(2,2),mar=c(4,5,4,1))
 
 # period 1
-fit1_arnet <- readRDS('real_data/data/fit_man1_imom.rds')
+fit1_arnet <- readRDS('real_data/data/fit_man1.rds')
 # plot xi-hat against formation socialitys
 plot(fit1_arnet$xi,c(0,coef(fit1soc)[2:106]),
      xlab=TeX('AR network $\\hat{\\xi}_i$'),
@@ -102,7 +128,7 @@ plot(fit1_arnet$eta,c(0,coef(fit1soc)[108:212]),
 # ie overall it has fewer common neighbors than other nodes of similar degree
 
 # period 2
-fit2_arnet <- readRDS('real_data/data/fit_man2_imom.rds')
+fit2_arnet <- readRDS('real_data/data/fit_man2.rds')
 # plot xi-hat against formation sociality
 plot(fit2_arnet$xi[-86],c(0,coef(fit2soc)[2:106])[-86],
      xlab=TeX('AR network $\\hat{\\xi}_i$'),
@@ -118,8 +144,9 @@ plot(fit2_arnet$eta[-86],c(0,coef(fit2soc)[108:212])[-86],
 dev.off()
 
 # NOTE: MPLE does not exist for period 2, when refit with problem node 86 removed,
-# remaining parameters are essentially the same, leave as is, removing node 86 from
-# the plots as its sociality parameter is unreliable
+# remaining parameters are essentially the same
+# ie fitting is left as is, with node 86 removed from the plots as its sociality parameter
+# estimate is unreliable
 
 # NOT RUN: does not coverge and/or optimization takes too long to run
 # fitting two STERGMs with edge + sociality + triangle (+ threepath)
