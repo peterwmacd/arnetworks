@@ -36,7 +36,7 @@ n2 <- dim(X_man2)[3]
 # store as complete network list
 nets <- U <- V <- list()
 for(ii in 1:n){
-  nets[[ii]] <- network::network(X_man[,,ii],directed=FALSE) 
+  nets[[ii]] <- network::network(X_man[,,ii],directed=FALSE)
   U[[ii]] <- UV_man$U[,,ii]
   V[[ii]] <- UV_man$V[,,ii]
 }
@@ -99,7 +99,7 @@ for(ii in 1:(n-1)){
   pval_ecov[ii,] <- summary(temp)$coefficients[,5]
 }
 # NOTE: seems like edgecov breaks when the model is specified as Form/Diss instead of Form/Persist
-# NOTE: networks are too small and sparse to fit node-specific sociality effects to individual transitions, MPLE 
+# NOTE: networks are too small and sparse to fit node-specific sociality effects to individual transitions, MPLE
 # does not exist
 
 # remove 13 and 14 to account for the period change
@@ -107,17 +107,19 @@ for(ii in 1:(n-1)){
 # plot over time
 pdf('fit_plots_man/tergm_sequence.pdf',width=8,height=8)
 matplot(c(1:12,15:(n-1)),coef_ecov[c(1:12,15:(n-1)),],ylim=c(-30,60),xlab='Week',ylab='Coef. estimate',
-        lty=1,pch=16,type='p',main='TERGM transition model parameter estimates')
+        lty=1,pch=16,type='p',main='TERGM transition model parameter estimates',
+        cex.lab=1.4,cex.main=1.4)
 #matplot(coef_ecov - 2*se_ecov,type='p',lty=1,pch=12,add=TRUE)
 abline(v=13.5,lty=2) # cover up transition between regimes
 # add legend and label regimes
-legend(x=5,y=-10,ncol=3,col=1:6,lty=0,pch=16,legend=c('Form edges',
-                                                      'Form U',
-                                                      'Form V',
-                                                      'Persist edges',
-                                                      'Persist U',
-                                                      'Persist V'))
-text(x=c(3,22.5),y=60,labels=c('Period 1','Period 2'),pos=4)
+legend(x=20,y=-7,ncol=2,col=1:6,lty=0,pch=16,cex=1.4,
+       legend=c(TeX('$\\hat{\\beta}_0^+'),
+                TeX('$\\hat{\\beta}_U^+'),
+                TeX('$\\hat{\\beta}_V^+'),
+                TeX('$\\hat{\\beta}_0^-'),
+                TeX('$\\hat{\\beta}_U^-'),
+                TeX('$\\hat{\\beta}_V^-')))
+text(x=c(3,22.5),y=60,labels=c('Period 1','Period 2'),pos=4,cex=1.3)
 dev.off()
 
 # fitting two STERGMs with edge + sociality
@@ -134,18 +136,20 @@ fit2soc <- tergm(net2 ~ Form(~edges + sociality) + Persist(~edges + sociality),e
 
 # period 1
 pdf('fit_plots_man/tergm_degree.pdf',width=10,height=8)
-par(mfrow=c(2,2))
+par(mfrow=c(2,2),mar=c(4,5,4,1))
 fit1_arnet <- readRDS('data/fit_man1_imom.rds')
 # plot xi-hat against formation socialitys
 plot(fit1_arnet$xi,c(0,coef(fit1soc)[2:106]),
-     xlab='AR network xi estimate',
-     ylab='TERGM sociality estimate',
-     main='Formation degree parameter estimates, period 1')
+     xlab=TeX('AR network $\\hat{\\xi}_i$'),
+     ylab=TeX('STERGM $\\hat{\\alpha}_i^+$'),
+     main='Formation parameter estimates, period 1',
+     cex.lab=1.3,cex.main=1.3)
 # plot eta-hat against persistence sociality
 plot(fit1_arnet$eta,c(0,coef(fit1soc)[108:212]),
-     xlab='AR network eta estimate',
-     ylab='TERGM sociality estimate',
-     main='Dissolution degree parameter estimates, period 1')
+     xlab=TeX('AR network $\\hat{\\eta}_i$'),
+     ylab=TeX('STERGM $\\hat{\\alpha}_i^-$'),
+     main='Dissolution parameter estimates, period 1',
+     cex.lab=1.3,cex.main=1.3)
 
 # NOTE: bad node is 80, it is extremely outlying in this plot. It is farther from the bulk of
 # degree vs sociality than degree vs xi, and it is indeed below the bulk of degree vs triangle participation,
@@ -155,20 +159,23 @@ plot(fit1_arnet$eta,c(0,coef(fit1soc)[108:212]),
 fit2_arnet <- readRDS('data/fit_man2_imom.rds')
 # plot xi-hat against formation sociality
 plot(fit2_arnet$xi[-86],c(0,coef(fit2soc)[2:106])[-86],
-     xlab='AR network xi estimate',
-     ylab='TERGM sociality estimate',
-     main='Formation degree parameter estimates, period 2')
+     xlab=TeX('AR network $\\hat{\\xi}_i$'),
+     ylab=TeX('STERGM $\\hat{\\alpha}_i^+$'),
+     main='Formation parameter estimates, period 2',
+     cex.lab=1.3,cex.main=1.3)
 # plot eta-hat against persistence sociality
 plot(fit2_arnet$eta[-86],c(0,coef(fit2soc)[108:212])[-86],
-     xlab='AR network eta estimate',
-     ylab='TERGM sociality estimate',
-     main='Dissolution degree parameter estimates, period 2')
+     xlab=TeX('AR network $\\hat{\\eta}_i$'),
+     ylab=TeX('STERGM $\\hat{\\alpha}_i^-$'),
+     main='Dissolution parameter estimates, period 2',
+     cex.lab=1.3,cex.main=1.3)
 dev.off()
 
-# NOTE: MPLE does not exist for period 2, should refit with one sociality parameter ignored (node 86), remaining parameters
-# are essentially the same so we leave as is
+# NOTE: MPLE does not exist for period 2, when refit with problem node 86 removed,
+# remaining parameters are essentially the same, leave as is, removing node 86 from
+# the plots as its sociality parameter is unreliable
 
-# DON'T RUN: does not coverge and/or optimization takes too long to run
+# DO NOT RUN: does not coverge and/or optimization takes too long to run
 # fitting two STERGMs with edge + sociality + triangle (+ threepath)
 
 # fit1tri <- tergm(netsn1 ~ Form(~edges + triangle) + Persist(~edges + triangle),estimate='CMLE') # error MCMLE stuck
@@ -178,6 +185,6 @@ dev.off()
 # save(fit1tri,fit2tri,fit1trithree,fit2trithree,file='data/fit_tergms.RData')
 
 # fit1tri terminates w/error
-# fit2tri terminates w/error 
+# fit2tri terminates w/error
 # fit1trithree does not converge (17/60 iterations in ~4 days)
 # fit2trithree not run
