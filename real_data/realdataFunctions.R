@@ -15,22 +15,6 @@ hollowize <- function(M){
   M - diag(diag(M))
 }
 
-# NOT RUN
-# degree_stats <- function(X){
-#   # dimensions
-#   p <- dim(X)[1]
-#   n <- dim(X)[3]
-#   # initialize D, D_all
-#   D <- matrix(0,n,p)
-#   D_all <- rep(0,n)
-#   # populate D, D_all
-#   for(t in 1:n){
-#     D[t,] <- rowSums(X[,,t])
-#     D_all[t] <- sum(D[t,])/2
-#   }
-#   return(list(D=D,D_all=D_all))
-# }
-
 # fitted model objects for AR transitivity
 model_probs <- function(fit,stats,X){
   # dimensions
@@ -54,22 +38,6 @@ model_probs <- function(fit,stats,X){
   }
   return(list(alpha=alpha,beta=beta,gamma=gamma))
 }
-
-# NOT RUN
-# model_residuals <- function(probs,X){
-#   # dimensions
-#   p <- dim(X)[1]
-#   n <- dim(X)[3]
-#   # initialize array
-#   eps <- array(NA,c(p,p,n-1))
-#   # populate
-#   for(t in 1:(n-1)){
-#     c1 <- pmin(probs$alpha[,,t]/(1 - probs$beta[,,t]),1) # thresholding as a workaround for now
-#     c2 <- pmin(probs$beta[,,t]/(1-probs$alpha[,,t]),1)
-#     eps[,,t] <- c1*X[,,t]*X[,,t+1] - c2*(1-X[,,t])*(1-X[,,t+1]) + (1-X[,,t])*X[,,t+1] - X[,,t]*(1-X[,,t+1])
-#   }
-#   return(eps)
-# }
 
 # next snapshot predictions for AR transitivity model
 model_predict <- function(n_out,fit,X_prev){

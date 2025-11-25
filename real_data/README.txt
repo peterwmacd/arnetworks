@@ -44,7 +44,7 @@ Usage
   - all scripts source helper functions in 'realdataFunctions.R'
   - results from code chunks (3-2, 3-4, 6-1) which take over 5 minutes to run have been cached in folder 'data' and can be skipped
   - manufacturing email data is imported from R package networkDynamicData
-  - conference interaction data is included in the repository ('tij_SFHH.dat_.gz')
+  - conference interaction data is included in the repository ('data/tij_SFHH.dat_.gz')
   - Figures in the manuscript are saved in individual folders (see above)
   - Tables in the manuscript are saved in folder 'data'
 
