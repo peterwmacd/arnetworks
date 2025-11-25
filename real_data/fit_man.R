@@ -1,64 +1,58 @@
-# load data
-setwd('~/packages/arnetworks/real_data/')
-# load packages (incl. arnetworks)
-library(devtools)
-library(pROC)
-library(latex2exp)
-# source code
-load_all()
-source('realdataFunctions.R')
-#source('Functions.R')
-#source('Estim.R')
+# AR transitivity fitting and analysis for manufacturing email data
 
-# black and white indicator for plots
-bw <- FALSE
+# libraries
+library(arnetworks)
+library(latex2exp)
+library(pROC)
+
+# helpers
+source('real_data/realdataFunctions.R')
+
+# colorblind palete
+cbp <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+#### (1) data preprocessing ####
 
 # manufacturing network
-X_man <- readRDS('data/X_man.rds')
+X_man <- readRDS('real_data/data/X_man.rds')
 p <- dim(X_man)[1]
 n <- dim(X_man)[3]
-# transitivity statistics
-# UV_man <- arnetworks::statsTransitivity(X_man)
 
-# fit_man <- estim_transitivity(X_man,verbose=TRUE)
-# # save fitted model
-# saveRDS(fit_man,file='data/fit_man.rds')
-
-# splitting into two regimes for fitting
 # first regime snapshots 1 to 13
 X_man1 <- X_man[,,1:13]
 UV_man1 <- arnetworks::statsTransitivity(X_man1)
 n1 <- dim(X_man1)[3]
-system.time(fit_man1 <- arnetworks::estTransitivity(X_man1,
-                                        tauSeq_a = 0.3, tauSeq_b = 0.3,
-                                        tauSeq_xi = 0.05, tauSeq_eta = 0.05,
-                                        verbose=TRUE,doInference=FALSE))
-# runs in ~5 minutes
-# save fitted model
-saveRDS(fit_man1,file='data/fit_man1_imom.rds')
 
 # second regime snapshots 14 to 39
 X_man2 <- X_man[,,14:39]
 UV_man2 <- arnetworks::statsTransitivity(X_man2)
 n2 <- dim(X_man2)[3]
-system.time(fit_man2 <- arnetworks::estTransitivity(X_man2,
-                                                    tauSeq_a = 0.3, tauSeq_b = 0.3,
-                                                    tauSeq_xi = 0.05, tauSeq_eta = 0.05,
-                                                    verbose=TRUE,doInference=FALSE))
-# runs in ~6 minutes
-# save fitted model
-saveRDS(fit_man2,file='data/fit_man2_imom.rds')
 
-#### Model interpretation ####
+#### (2) main model fitting ####
+
+# fit AR transitivity to first period
+fit_man1 <- arnetworks::estTransitivity(X_man1,
+                                        tauSeq_a = 0.3, tauSeq_b = 0.3,
+                                        tauSeq_xi = 0.05, tauSeq_eta = 0.05,
+                                        verbose=TRUE,doInference=FALSE)
+# NOTE: runs in ~5 minutes
+# save fitted model
+saveRDS(fit_man1,file='real_data/data/fit_man1.rds')
+
+# fit AR transitivity to second period
+fit_man2 <- arnetworks::estTransitivity(X_man2,
+                                        tauSeq_a = 0.3, tauSeq_b = 0.3,
+                                        tauSeq_xi = 0.05, tauSeq_eta = 0.05,
+                                        verbose=TRUE,doInference=FALSE)
+# NOTE: runs in ~6 minutes
+# save fitted model
+saveRDS(fit_man2,file='real_data/data/fit_man2.rds')
+
+#### (3) model interpretation ####
 
 # load models
-# fit_man <- readRDS('data/fit_man.rds')
-
-#fit_man1 <- readRDS('data/fit_man1.rds')
-fit_man1 <- readRDS('data/fit_man1_imom.rds')
-
-#fit_man2 <- readRDS('data/fit_man2.rds')
-fit_man2 <- readRDS('data/fit_man2_imom.rds')
+fit_man1 <- readRDS('real_data/data/fit_man1.rds')
+fit_man2 <- readRDS('real_data/data/fit_man2.rds')
 
 # first regime
 
@@ -71,21 +65,6 @@ print(c(fit_man1$gVal))
 print(mean(fit_man1$xi))
 print(mean(fit_man1$eta))
 
-# histogram of fitted thetas and etas
-# pdf(file='fit_plots_man/theta_hist_man1.pdf')
-# hist(fit_man$theta,20,
-#      main='Histogram of theta-hat, regime 1',xlab='',col='blue')
-# abline(v=mean(fit_man$theta),lty=2)
-# dev.off()
-# # quite dispersed, mean around 0.5
-#
-# pdf(file='fit_plots_man/eta_hist_man1.pdf')
-# hist(fit_man$eta,20,
-#      main='Histogram of eta-hat, regime 1',xlab='',col='red')
-# abline(v=mean(fit_man$eta),lty=2)
-# dev.off()
-# # less dispersed, mean around 0.9
-
 # second regime
 
 # global parameters
@@ -97,51 +76,21 @@ print(c(fit_man2$gVal))
 print(mean(fit_man2$xi))
 print(mean(fit_man2$eta))
 
-# histogram of fitted thetas and etas
-# pdf(file='fit_plots_man/theta_hist_man2.pdf')
-# hist(fit_man2$theta,20,
-#      main='Histogram of theta-hat, regime 2',xlab='',col='blue')
-# abline(v=mean(fit_man2$theta),lty=2)
-# dev.off()
-# # quite dispersed, mean around 0.5
-#
-# pdf(file='fit_plots_man/eta_hist_man2.pdf')
-# hist(fit_man2$eta,20,
-#      main='Histogram of eta-hat, regime 2',xlab='',col='red')
-# abline(v=mean(fit_man2$eta),lty=2)
-# dev.off()
-# less dispersed, mean around 0.9
-
-#### analysis against metadata ####
-
-levels <- readRDS('data/levels_man.rds')
+# load metadata (organizational levels)
+levels <- readRDS('real_data/data/levels_man.rds')
 print(table(levels))
 
 # first regime
 
+# produce degree_scatter_man1.pdf (Figure 1, left panel)
 # scatter plot of theta and eta parameters for different hierarchical levels
-if(bw){
-  pchvec <- c(1,0,6,NA,2,5)
-
-  pdf(file='fit_plots_man/theta_scatter_man1_bw.pdf')
-
-  par(mar=c(4,5.5,4,4))
-  plot(fit_man1$xi,fit_man1$eta,
-       main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-       xlim=c(0,2.6),ylim=c(0,1.5),cex=.8*levels,pch=pchvec[levels],cex.lab=1.8,cex.main=1.5)
-  abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
-
-  dev.off()
-
-} else{
-  pdf(file='fit_plots_man/theta_scatter_man1.pdf')
-  par(mar=c(4,5.5,4,4))
-  plot(fit_man1$xi,fit_man1$eta,
-       main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-       xlim=c(0,2.6),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8,cex.main=1.5)
-  abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
-  dev.off()
-}
+pdf(file='real_data/fit_plots_man/degree_scatter_man1.pdf')
+par(mar=c(4,5.5,4,4))
+plot(fit_man1$xi,fit_man1$eta,
+     main='Period 1',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
+     xlim=c(0,2.6),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8,cex.main=1.5)
+abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
+dev.off()
 
 # means of xi-hat for managers and non-managers
 print(mean(fit_man1$xi[levels==1]))
@@ -149,34 +98,23 @@ print(mean(fit_man1$xi[levels>1]))
 
 # second regime
 
+# produce degree_scatter_man1.pdf (Figure 1, right panel)
 # scatter plot of theta and eta parameters for different hierarchical levels
-if(bw){
-  pchvec <- c(1,0,6,NA,2,5)
-
-  pdf(file='fit_plots_man/theta_scatter_man2_bw.pdf')
-  par(mar=c(4,5.5,4,4))
-  plot(fit_man2$xi,fit_man2$eta,
-       main='Period 2',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-       xlim=c(0,2.6),ylim=c(0,1.5),cex=.8*levels,pch=pchvec[levels],cex.lab=1.8,cex.main=1.5)
-  abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
-  dev.off()
-} else{
-  pdf(file='fit_plots_man/theta_scatter_man2.pdf')
-  par(mar=c(4,5.5,4,4))
-  plot(fit_man2$xi,fit_man2$eta,
-       main='Period 2',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
-       xlim=c(0,2.6),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8,cex.main=1.5)
-  abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
-  dev.off()
-}
+pdf(file='real_data/fit_plots_man/degree_scatter_man2.pdf')
+par(mar=c(4,5.5,4,4))
+plot(fit_man2$xi,fit_man2$eta,
+     main='Period 2',xlab=TeX('$\\hat{\\xi}_i'),ylab=TeX('$\\hat{\\eta}_i'),
+     xlim=c(0,2.6),ylim=c(0,1.5),col=levels,cex=.8*levels,cex.lab=1.8,cex.main=1.5)
+abline(lm(fit_man1$eta~fit_man1$xi),lty=2)
+dev.off()
 
 # means of xi-hat for managers and non-managers
 print(mean(fit_man2$xi[levels==1]))
 print(mean(fit_man2$xi[levels>1]))
 
-#### link prediction ####
+#### (4) link prediction: fitting ####
 
-# vary the size of training set, prediction horizon
+# only for second regime
 # set training sets n_train=10,...,22, starting from time 14
 # set prediction horizon n_out=1,2,3
 
@@ -186,7 +124,7 @@ print(mean(fit_man2$xi[levels>1]))
 # Previous edge: use the most recent observed edge (only get one spec/sens pair)
 # simple AR model: recursive forecasts from simple AR model
 
-# using second regime
+# subset to second regime
 n_train <- 10:23
 
 # reduced model fits
@@ -199,10 +137,9 @@ for(i in 1:length(n_train)){
                                                      verbose=TRUE,doInference=FALSE)
   fit_man_simple[[i]] <- simple_ar_fit(X_man2[,,1:n_train[i]])
   fit_man_edge[[i]] <- edge_ar_fit(X_man2[,,1:n_train[i]])
-  fit_man_edgemod[[i]] <- edge_ar_fit_modified(X_man2[,,1:n_train[i]])
   print(paste0('models ',i,' of ',length(n_train)))
 }
-# runs in ~60-70 minutes
+# NOTE: runs in ~60 minutes
 
 # temporary code to update just one list
 # fit_man_edgemod <- list()
@@ -211,16 +148,16 @@ for(i in 1:length(n_train)){
 # }
 
 # save reduced model fits
-saveRDS(fit_man_reduce,file='data/fit_man2_reduce_imom.rds')
-saveRDS(fit_man_simple,file='data/fit_man2_simple.rds')
-saveRDS(fit_man_edge,file='data/fit_man2_edgewise.rds')
-saveRDS(fit_man_edgemod,file='data/fit_man2_edgewise_modified.rds')
+saveRDS(fit_man_reduce,file='real_data/data/fit_man2_reduce.rds')
+saveRDS(fit_man_simple,file='real_data/data/fit_man2_simple.rds')
+saveRDS(fit_man_edge,file='real_data/data/fit_man2_edgewise.rds')
+
+#### (5) link prediction: results ####
 
 # load reduced model fits
-fit_man_reduce <- readRDS(file='data/fit_man2_reduce_imom.rds')
-fit_man_simple <- readRDS(file='data/fit_man2_simple.rds')
-fit_man_edge <- readRDS(file='data/fit_man2_edgewise.rds')
-fit_man_edgemod <- readRDS(file='data/fit_man2_edgewise_modified.rds')
+fit_man_reduce <- readRDS(file='real_data/data/fit_man2_reduce.rds')
+fit_man_simple <- readRDS(file='real_data/data/fit_man2_simple.rds')
+fit_man_edge <- readRDS(file='real_data/data/fit_man2_edgewise.rds')
 
 # predict and plot ROCs
 response_combined <- list(NULL,NULL,NULL)
@@ -231,6 +168,9 @@ pred_simple_combined <- list(NULL,NULL,NULL)
 pred_edgear_combined <- list(NULL,NULL,NULL)
 pred_naive_combined <- list(matrix(0,2,2),matrix(0,2,2),matrix(0,2,2))
 
+# subset to regime 2
+n_train <- 10:23
+# loop over training set sizes, compute predictions
 for(i in 1:length(n_train)){
   # training set edge means or 1-dimensional approx (similar number of parameters)
   Xmean <- apply(X_man2[,,1:n_train[i]],c(1,2),mean)
@@ -243,7 +183,7 @@ for(i in 1:length(n_train)){
   pred_simple <- simple_ar_predict(3,fit_man_simple[[i]],X_man2[,,n_train[i]])
   # edgewise AR probabilities
   #pred_edgear <- edge_ar_predict(3,fit_man_edge[[i]],X_man2[,,n_train[i]])
-  pred_edgear <- edge_ar_predict(3,fit_man_edgemod[[i]],X_man2[,,n_train[i]])
+  pred_edgear <- edge_ar_predict(3,fit_man_edge[[i]],X_man2[,,n_train[i]])
   for(n_out in 1:3){
     # store response
     response_combined[[n_out]] <- c(response_combined[[n_out]],ut(X_man2[,,n_train[i]+n_out]))
@@ -262,82 +202,41 @@ for(i in 1:length(n_train)){
   }
 }
 
-# colorblind palete
-cbp <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-
-if(bw){
-  for(n_out in 1:3){
-    pdf(paste0('fit_plots_man/roc_curves_man2_hor',n_out,'_bw.pdf'),width=6,height=6)
-    par(mfrow=c(1,1))
-    temp <- roc(response=response_combined[[n_out]],predictor=pred_degree_combined[[n_out]])
-    plot(temp,lty=1,lwd=1.5,col='darkgrey',
-         main=TeX(paste0('ROC, $n_{{step}}=',n_out,'$')),
-         cex.lab=1.5,cex.main=1.5)
-    # ROC for model-based prediction
-    temp2 <- roc(response=response_combined[[n_out]],predictor=pred_model_combined[[n_out]])
-    plot(temp2,lty=1,add=TRUE)
-    # ROC for edge means
-    temp3 <- roc(response=response_combined[[n_out]],predictor=pred_mean_combined[[n_out]])
-    plot(temp3,lty=2,add=TRUE)
-    # ROC for simple AR model
-    temp4 <- roc(response=response_combined[[n_out]],predictor=pred_simple_combined[[n_out]])
-    plot(temp4,lty=4,add=TRUE)
-    # ROC for edgewise AR model
-    temp5 <- roc(response=response_combined[[n_out]],predictor=pred_edgear_combined[[n_out]])
-    plot(temp5,lty=3,add=TRUE)
-    # calculate point for naive one-step
-    naive_class <- pred_naive_combined[[n_out]]
-    fpr <- naive_class[2,1]/(naive_class[2,1] + naive_class[1,1])
-    tpr <- naive_class[2,2]/(naive_class[2,2] + naive_class[1,2])
-    points(1-fpr,tpr,col=cbp[1],pch=15,cex=1.2)
-    # legend
-    if(n_out==1){
-      legend(x=.585,y=.42,ncol=1,cex=1.2,lwd=2,
-             legend=c('Transitivity model','Global AR model','Edgewise AR model', 'Degree mean model','Edgewise mean model','Previous edge'),
-             lty=c(1,4,3,1,2,NA),pch=c(NA,NA,NA,NA,NA,15),col=c(1,1,1,'darkgrey',1,1),pt.lwd=c(1,1,1,1.5,1,1))
-    }
-    dev.off()
+# produce roc_curves_man2_hor1-3.pdf, (Figure 2, all panels)
+for(n_out in 1:3){
+  pdf(paste0('real_data/fit_plots_man/roc_curves_man2_hor',n_out,'.pdf'),width=6,height=6)
+  par(mfrow=c(1,1))
+  temp <- roc(response=response_combined[[n_out]],predictor=pred_degree_combined[[n_out]])
+  plot(temp,col=cbp[3],
+       main=TeX(paste0('ROC, $n_{{step}}=',n_out,'$')),
+       cex.lab=1.5,cex.main=1.5)
+  # ROC for model-based prediction
+  temp2 <- roc(response=response_combined[[n_out]],predictor=pred_model_combined[[n_out]])
+  plot(temp2,col=cbp[2],add=TRUE)
+  # ROC for edge means
+  temp3 <- roc(response=response_combined[[n_out]],predictor=pred_mean_combined[[n_out]])
+  plot(temp3,col=cbp[7],add=TRUE)
+  # ROC for simple AR model
+  temp4 <- roc(response=response_combined[[n_out]],predictor=pred_simple_combined[[n_out]])
+  plot(temp4,col=cbp[4],add=TRUE)
+  # ROC for edgewise AR model
+  temp5 <- roc(response=response_combined[[n_out]],predictor=pred_edgear_combined[[n_out]])
+  plot(temp5,col=cbp[6],add=TRUE)
+  # calculate point for naive one-step
+  naive_class <- pred_naive_combined[[n_out]]
+  fpr <- naive_class[2,1]/(naive_class[2,1] + naive_class[1,1])
+  tpr <- naive_class[2,2]/(naive_class[2,2] + naive_class[1,2])
+  points(1-fpr,tpr,col=cbp[1],pch=15,cex=1.2)
+  # legend
+  if(n_out==1){
+    legend(x=.585,y=.42,ncol=1,cex=1.2,lwd=2,
+           legend=c('Transitivity model','Global AR model','Edgewise AR model', 'Degree mean model','Edgewise mean model','Previous edge'),
+           lty=c(1,1,1,1,1,NA),pch=c(NA,NA,NA,NA,NA,15),col=cbp[c(2,4,6,3,7,1)])
   }
-} else{
-  for(n_out in 1:3){
-    pdf(paste0('fit_plots_man/roc_curves_man2_hor',n_out,'.pdf'),width=6,height=6)
-    par(mfrow=c(1,1))
-    temp <- roc(response=response_combined[[n_out]],predictor=pred_degree_combined[[n_out]])
-    plot(temp,col=cbp[3],
-         main=TeX(paste0('ROC, $n_{{step}}=',n_out,'$')),
-         cex.lab=1.5,cex.main=1.5)
-    # ROC for model-based prediction
-    temp2 <- roc(response=response_combined[[n_out]],predictor=pred_model_combined[[n_out]])
-    plot(temp2,col=cbp[2],add=TRUE)
-    # ROC for edge means
-    temp3 <- roc(response=response_combined[[n_out]],predictor=pred_mean_combined[[n_out]])
-    plot(temp3,col=cbp[7],add=TRUE)
-    # ROC for simple AR model
-    temp4 <- roc(response=response_combined[[n_out]],predictor=pred_simple_combined[[n_out]])
-    plot(temp4,col=cbp[4],add=TRUE)
-    # ROC for edgewise AR model
-    temp5 <- roc(response=response_combined[[n_out]],predictor=pred_edgear_combined[[n_out]])
-    plot(temp5,col=cbp[6],add=TRUE)
-    # calculate point for naive one-step
-    naive_class <- pred_naive_combined[[n_out]]
-    fpr <- naive_class[2,1]/(naive_class[2,1] + naive_class[1,1])
-    tpr <- naive_class[2,2]/(naive_class[2,2] + naive_class[1,2])
-    points(1-fpr,tpr,col=cbp[1],pch=15,cex=1.2)
-    # legend
-    if(n_out==1){
-      legend(x=.585,y=.42,ncol=1,cex=1.2,lwd=2,
-             legend=c('Transitivity model','Global AR model','Edgewise AR model', 'Degree mean model','Edgewise mean model','Previous edge'),
-             lty=c(1,1,1,1,1,NA),pch=c(NA,NA,NA,NA,NA,15),col=cbp[c(2,4,6,3,7,1)])
-    }
-    dev.off()
-  }
+  dev.off()
 }
 
-######
-
-# Likelihood/AIC/BIC-based model comparison
-
-# want to do this before and after the split
+#### (6) AIC/BIC comparison ####
 
 # minimize:
 # AIC -2ll + 2{# param}
@@ -346,6 +245,7 @@ if(bw){
 # first regime
 n1_bic <- (n1-1)*choose(p,2)
 
+# initialize and populate ics1 (Table 2, columns 2-3)
 ics1 <- matrix(NA,6,2)
 rownames(ics1) <- c('Transitivity AR model',
                     'Global AR model',
@@ -405,11 +305,13 @@ ics1[6,2] <- log(n1_bic) - 2*ll_global
 # reorder for presentation
 ics1 <- ics1[c(1,2,3,5,6,4),]
 
-saveRDS(ics1,file='data/ics_man1_imom.rds')
+# save ics1 (Table 2, columns 2-3)
+saveRDS(ics1,file='real_data/data/ics_man1.rds')
 
 # second regime
 n2_bic <- (n2-1)*choose(p,2)
 
+# initialize and populate ics2 (Table 2, columns 4-5)
 ics2 <- matrix(NA,6,2)
 rownames(ics2) <- c('Transitivity AR model',
                     'Global AR model',
@@ -469,5 +371,5 @@ ics2[6,2] <- log(n2_bic) - 2*ll_global
 # reorder for presentation
 ics2 <- ics2[c(1,2,3,5,6,4),]
 
-saveRDS(ics2,file='data/ics_man2_imom.rds')
-
+# save ics2 (Table 2, columns 4-5)
+saveRDS(ics2,file='real_data/data/ics_man2.rds')

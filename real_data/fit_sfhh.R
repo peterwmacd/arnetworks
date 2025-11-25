@@ -1,44 +1,40 @@
-# load data
-setwd('~/packages/arnetworks/real_data/')
-# load packages
-library(devtools)
-library(pROC)
-library(latex2exp)
-# source code
-load_all()
-source('realdataFunctions.R')
-# source('Functions.R')
-# source('Estim.R')
+# AR transitivity fitting and analysis for conference interaction data
 
-# black and white indicator
-bw <- FALSE
+# libraries
+library(arnetworks)
+library(latex2exp)
+library(pROC)
+
+# helpers
+source('real_data/realdataFunctions.R')
 
 # colorblind palete
 cbp <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
+#### (1) preprocessing and main model fit ####
+
 # conference network
-X_sfhh <- readRDS('data/X_sfhh.rds')
+X_sfhh <- readRDS('real_data/data/X_sfhh.rds')
 p <- dim(X_sfhh)[1]
 n <- dim(X_sfhh)[3]
 # transitivity statistics
 UV_sfhh <- arnetworks::statsTransitivity(X_sfhh)
 # mean(U) ~ 0.08, 95% of entries are zero
-# mean(V) ~ 2.2, 26% of entries are zero (still quite small, perhaps shows more
-# modularity?)
+# mean(V) ~ 2.2, 26% of entries are zero
 
-system.time(fit_sfhh <- arnetworks::estTransitivity(X_sfhh,
+fit_sfhh <- arnetworks::estTransitivity(X_sfhh,
                                         tauSeq_a = 0.3, tauSeq_b = 0.3,
                                         tauSeq_xi = 0.05, tauSeq_eta = 0.05,
-                                        verbose=TRUE,doInference=FALSE))
-# runs in ~25 minutes
+                                        verbose=TRUE,doInference=FALSE)
+# NOTE: runs in ~25 minutes
 
 # save fitted model
-saveRDS(fit_sfhh,file='data/fit_sfhh_imom.rds')
+saveRDS(fit_sfhh,file='real_data/data/fit_sfhh.rds')
 
-#### Model interpretation ####
+#### (2) model interpretation ####
 
 # load model
-fit_sfhh <- readRDS('data/fit_sfhh_imom.rds')
+fit_sfhh <- readRDS('real_data/data/fit_sfhh.rds')
 
 # estimates of a,b
 print(fit_sfhh$gVal)
@@ -51,44 +47,26 @@ print(mean(fit_sfhh$eta))
 print(quantile(fit_sfhh$xi))
 print(quantile(fit_sfhh$eta))
 
-if(bw){
-  # histogram of fitted thetas and etas
-  pdf(file='fit_plots_sfhh/theta_hist_sfhh_bw.pdf')
-  hist(fit_sfhh$xi,20,
-       main=TeX('Histogram of $\\{ \\hat{\\xi}_i \\}_{i=1}^{200}$'),
-       xlab='',col='darkgrey',xlim=c(0,1),cex.main=1.8,cex.lab=1.3)
-  abline(v=mean(fit_sfhh$xi),lty=2,lwd=2)
-  dev.off()
-  # generally small (mean 0.18) with a long right tail
+# produce xi_hist_sfhh.pdf (Figure S10, left panel)
+pdf(file='real_data/fit_plots_sfhh/xi_hist_sfhh.pdf')
+hist(fit_sfhh$xi,20,
+     main=TeX('Histogram of $\\{ \\hat{\\xi}_i \\}_{i=1}^{200}$'),
+     xlab='',col=cbp[3],xlim=c(0,1),cex.main=1.8,cex.lab=1.3)
+abline(v=mean(fit_sfhh$xi),lty=2)
+dev.off()
+# generally small (mean 0.18) with a long right tail
 
-  pdf(file='fit_plots_sfhh/eta_hist_sfhh_bw.pdf')
-  hist(fit_sfhh$eta,20,
-       main=TeX('Histogram of $\\{ \\hat{\\eta}_i \\}_{i=1}^{200}$'),
-       xlab='',col='white',xlim=c(.8,1.4),cex.main=1.8,cex.lab=1.3)
-  abline(v=mean(fit_sfhh$eta),lty=2,lwd=2)
-  dev.off()
-  # larger, less dispersed, mean around 1.08
-} else{
-  # histogram of fitted thetas and etas
-  pdf(file='fit_plots_sfhh/theta_hist_sfhh.pdf')
-  hist(fit_sfhh$xi,20,
-       main=TeX('Histogram of $\\{ \\hat{\\xi}_i \\}_{i=1}^{200}$'),
-       xlab='',col=cbp[3],xlim=c(0,1),cex.main=1.8,cex.lab=1.3)
-  abline(v=mean(fit_sfhh$xi),lty=2)
-  dev.off()
-  # generally small (mean 0.18) with a long right tail
+# produce eta_hist_sfhh.pdf (Figure S10, center panel)
+pdf(file='real_data/fit_plots_sfhh/eta_hist_sfhh.pdf')
+hist(fit_sfhh$eta,20,
+     main=TeX('Histogram of $\\{ \\hat{\\eta}_i \\}_{i=1}^{200}$'),
+     xlab='',col=cbp[7],xlim=c(.8,1.4),cex.main=1.8,cex.lab=1.3)
+abline(v=mean(fit_sfhh$eta),lty=2)
+dev.off()
+# larger, less dispersed, mean around 1.08
 
-  pdf(file='fit_plots_sfhh/eta_hist_sfhh.pdf')
-  hist(fit_sfhh$eta,20,
-       main=TeX('Histogram of $\\{ \\hat{\\eta}_i \\}_{i=1}^{200}$'),
-       xlab='',col=cbp[7],xlim=c(.8,1.4),cex.main=1.8,cex.lab=1.3)
-  abline(v=mean(fit_sfhh$eta),lty=2)
-  dev.off()
-  # larger, less dispersed, mean around 1.08
-}
-
-# xy plot of fitted thetas and etas
-pdf(file='fit_plots_sfhh/theta_scatter_sfhh.pdf')
+# produce degree_scatter_sfhh.pdf (Figure S10, right panel)
+pdf(file='real_data/fit_plots_sfhh/degree_scatter_sfhh.pdf')
 par(mar=c(4,5.5,2,2))
 plot(fit_sfhh$xi,fit_sfhh$eta,
      main='',xlab=TeX('$\\hat{\\xi}_i$'),ylab=TeX('$\\hat{\\eta}_i$'),
@@ -99,7 +77,7 @@ dev.off()
 # little effect on the dissolution, but if anything forming more edge makes one
 # less likely to dissolve edges (again, consistent with degree heterogeneity)
 
-#### AIC/BIC comparison ####
+#### (3) AIC/BIC comparison ####
 
 # minimize:
 # AIC -2ll + 2{# param}
@@ -108,6 +86,7 @@ dev.off()
 # first regime
 n_bic <- (n-1)*choose(p,2)
 
+# initialize and populate ics (Table S4)
 ics <- matrix(NA,6,2)
 rownames(ics) <- c('Transitivity AR model',
                    'Global AR model',
@@ -167,65 +146,5 @@ ics[6,2] <- log(n_bic) - 2*ll_global
 # reorder for presentation
 ics <- ics[c(1,2,3,5,6,4),]
 
-saveRDS(ics,file='data/ics_sfhh_imom.rds')
-
-#### link prediction ####
-
-# # vary the size of training set, prediction horizon
-# # set training sets n_train=10,20,30
-# # set prediction horizon n_out=1,2,3
-#
-# # AR model: recursive forecasts from the fitted AR network model
-# # Degree parameters: rank-one approximation of the time-averaged adjacency matrix
-# # Edge means: time-averaged adjacency matrix (more parameters than AR model)
-# # Previous edge: use the most recent observed edge (only get one spec/sens pair)
-#
-# # set training sets n_train=6,12,18
-# # set prediction horizon n_out=1,2,3
-# n_train <- 6*1:3
-#
-# # reduced model fits
-# # fit_sfhh_reduce <- list()
-# # length(fit_sfhh_reduce) <- length(n_train)
-# # for(i in 1:3){
-# #   fit_sfhh_reduce[[i]] <- estim_transitivity(X_sfhh[,,1:n_train[i]],verbose=TRUE)
-# # }
-# # # save reduced model fits
-# # saveRDS(fit_sfhh_reduce,file='data/fit_sfhh_reduce.rds')
-#
-# # load reduced model fits
-# fit_sfhh_reduce <- readRDS(file='data/fit_sfhh_reduce.rds')
-#
-# # predict and plot ROCs
-# pdf('fit_plots_sfhh/roc_curves_sfhh.pdf')
-# par(mfrow=c(1,1))
-# for(i in 1:length(n_train)){
-#   # training set edge means or 1-dimensional approx (similar number of parameters)
-#   Xmean <- apply(X_sfhh[,,1:n_train[i]],c(1,2),mean)
-#   eigXmean <- eigen(Xmean)
-#   pred_stationary <- eigXmean$values[1]*tcrossprod(eigXmean$vectors[,1])
-#   # model probabilities
-#   pred_model <- model_predict(3,fit_sfhh_reduce[[i]],X_sfhh[,,n_train[i]])
-#   for(n_out in 1:3){
-#     # ROC for naive stationary prediction
-#     temp <- roc(response=ut(X_sfhh[,,n_train[i]+n_out]),predictor=ut(pred_stationary))
-#     plot(temp,col='blue',
-#          main=paste0('ROC, ',n_train[i],' training snapshots, horizon ',n_out))
-#     # ROC for model-based prediction
-#     temp2 <- roc(response=ut(X_sfhh[,,n_train[i]+n_out]),predictor=ut(pred_model[,,n_out]))
-#     plot(temp2,col='orange',add=TRUE)
-#     # ROC for edge means
-#     temp3 <- roc(response=ut(X_sfhh[,,n_train[i]+n_out]),predictor=ut(Xmean))
-#     plot(temp3,col='red',add=TRUE)
-#     # calculate point for naive one-step
-#     naive_class <- table(ut(X_sfhh[,,n_train[i]]),ut(X_sfhh[,,n_train[i]+n_out]))
-#     fpr <- naive_class[2,1]/(naive_class[2,1] + naive_class[1,1])
-#     tpr <- naive_class[2,2]/(naive_class[2,2] + naive_class[1,2])
-#     points(1-fpr,tpr,col='green',pch=15,cex=1.2)
-#     # legend
-#     legend(x=.75,y=.2,ncol=2,cex=.7,
-#            legend=c('AR model','Degree parameters','Edge means','Previous edge'),
-#            lty=c(1,1,1,NA),pch=c(NA,NA,NA,15),col=c('orange','blue','red','green'))
-#   }
-# }
-# dev.off()
+# save ics (Table S4)
+saveRDS(ics,file='data/ics_sfhh.rds')

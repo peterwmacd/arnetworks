@@ -1,9 +1,21 @@
+#### helper functions for AR networks real data analysis ####
+
+# log with truncation at boundary
 logadj = function(x){
-
   log(pmax(1e-5,x))
-
 }
 
+# vech operator: upper triangle of a square matrix (no diagonal)
+ut <- function(M){
+  c(M[upper.tri(M,diag=FALSE)])
+}
+
+# zero out the diagonal entries of a square matrix
+hollowize <- function(M){
+  M - diag(diag(M))
+}
+
+# NOT RUN
 # degree_stats <- function(X){
 #   # dimensions
 #   p <- dim(X)[1]
@@ -19,7 +31,7 @@ logadj = function(x){
 #   return(list(D=D,D_all=D_all))
 # }
 
-# fitted model objects
+# fitted model objects for AR transitivity
 model_probs <- function(fit,stats,X){
   # dimensions
   p <- dim(X)[1]
@@ -43,6 +55,7 @@ model_probs <- function(fit,stats,X){
   return(list(alpha=alpha,beta=beta,gamma=gamma))
 }
 
+# NOT RUN
 # model_residuals <- function(probs,X){
 #   # dimensions
 #   p <- dim(X)[1]
@@ -58,6 +71,7 @@ model_probs <- function(fit,stats,X){
 #   return(eps)
 # }
 
+# next snapshot predictions for AR transitivity model
 model_predict <- function(n_out,fit,X_prev){
   # dimensions
   p <- dim(X_prev)[1]
@@ -108,8 +122,7 @@ model_predict <- function(n_out,fit,X_prev){
   }
 }
 
-#### for fitting a simple AR(1) model ####
-
+# fitting simple AR(1) model
 simple_ar_fit <- function(X){
   n <- dim(X)[3]
   p <- dim(X)[1]
@@ -124,6 +137,7 @@ simple_ar_fit <- function(X){
   return(c(alpha_hat,beta_hat))
 }
 
+# next snapshot predictions from simple AR(1) model
 simple_ar_predict <- function(n_out,fit,X_prev){
   # dimensions
   p <- dim(X_prev)[1]
@@ -146,25 +160,8 @@ simple_ar_predict <- function(n_out,fit,X_prev){
   }
 }
 
-#### for fitting an edge-specific AR(1) model ####
-
+# fitting for edgewise AR(1) model
 edge_ar_fit <- function(X){
-  n <- dim(X)[3]
-  p <- dim(X)[1]
-  # estimate flip on
-  a1 <- apply(X[,,-1]*(1-X[,,-n]),c(1,2),sum)
-  a2 <- apply(1-X[,,-n],c(1,2),sum)
-  alpha_hat <- a1/a2
-  alpha_hat[is.nan(alpha_hat)] <- 1
-  # estimate flip off
-  b1 <- apply((1-X[,,-1])*X[,,-n],c(1,2),sum)
-  b2 <- apply(X[,,-n],c(1,2),sum)
-  beta_hat <- b1/b2
-  beta_hat[is.nan(beta_hat)] <- 1
-  return(list(A=alpha_hat,B=beta_hat))
-}
-
-edge_ar_fit_modified <- function(X){
   n <- dim(X)[3]
   p <- dim(X)[1]
   # estimate flip on
@@ -179,6 +176,7 @@ edge_ar_fit_modified <- function(X){
   return(list(A=alpha_hat,B=beta_hat))
 }
 
+# next snapshot prediction for edgewise AR(1) model
 edge_ar_predict <- function(n_out,fit,X_prev){
   # dimensions
   p <- dim(X_prev)[1]
@@ -201,11 +199,7 @@ edge_ar_predict <- function(n_out,fit,X_prev){
   }
 }
 
-# helper to take above the diagonal of a square matrix
-ut <- function(M){
-  c(M[upper.tri(M,diag=FALSE)])
-}
-
+# log-likelihood for AR network models
 # both X and gamma are pxpx(n-1) dimensional arrays
 ar_loglike <- function(X,gamma){
   n1 <- dim(X)[3]
