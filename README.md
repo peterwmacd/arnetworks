@@ -21,7 +21,7 @@ You can install the development version of arnetworks from
 
 The package provides a detailed implementation for fitting a particular
 AR network model with transitivity effects (see **Chang et al. (2026+),
-Section 4.3**). This is a basic example which shows how to simulate,
+Section 3.3**). This is a basic example which shows how to simulate,
 estimate and predict with this model.
 
 ``` r
@@ -50,15 +50,15 @@ fit1 = estTransitivity(X, U, V, tauSeq_a = 0.3, tauSeq_b = 0.3, tauSeq_xi = 0.05
 
 # global parameters for edge formation and dissoluton
 print(fit1$gVal)
-#> [1]  9.350807 10.301467
+#> [1] 9.848132 9.827991
 # local parameters for edge formation (quartiles)
 print(quantile(fit1$xi))
 #>        0%       25%       50%       75%      100% 
-#> 0.6680081 0.7736963 0.8196326 0.8676138 0.9690946
+#> 0.6861535 0.7284109 0.7889850 0.8509427 0.9318023
 # local parameters for edge formation (quartiles)
 print(quantile(fit1$eta))
 #>        0%       25%       50%       75%      100% 
-#> 0.8328370 0.8878001 0.9124410 0.9291489 1.0026133
+#> 0.8418398 0.8907354 0.9197076 0.9427149 1.0171535
 
 # note that the same global parameters are shared by the edge formation and dissolution models
 
@@ -80,7 +80,7 @@ pred1 = predictTransitivity(fit1,Xnew,nStep=2)
 The package also allows users to **specify their own AR network models**
 with both local and global parameters. This is a basic example which
 shows how to simulate, estimate and predict with the **persistence
-model** (see Chang et al. (2026+), Section 4.2). For an additional
+model** (see Chang et al. (2026+), Section 3.2). For an additional
 example on how to estimate and predict with the **transitivity model**,
 please see the documentation for `estNet`.
 
@@ -133,18 +133,18 @@ fit2 <- estNet(X, fij, gij,
 
 # global parameter for edge formation
 print(fit2$gAlphaVal)
-#> [1] 0.5354474
+#> [1] 0.5091007
 # global parameter for edge dissolution
 print(fit2$gBetaVal)
-#> [1] 0.5132621
+#> [1] 0.5307169
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$xi))
 #>        0%       25%       50%       75%      100% 
-#> 0.4644491 0.5674790 0.6582072 0.7689832 0.9411632
+#> 0.4651129 0.5758714 0.6412009 0.7581146 1.0629607
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$eta))
 #>        0%       25%       50%       75%      100% 
-#> 0.4712537 0.6327108 0.7219313 0.8025268 0.9713226
+#> 0.5065823 0.6312933 0.7405989 0.8219297 0.9252290
 
 # Predict the next network snapshot
 
@@ -164,8 +164,8 @@ pred2 = predictNet(fit2,Xnew,statsAlphaNew,statsBetaNew,fij,gij)
 ## Real Data Example 1: Manufacturing Email Data
 
 This repository contains data and code to reproduce the analysis and
-figures and tables in Chang et al. (2026+), Section 5, Appendix E.1, and
-Appendix E.2, see folder `real_data`. Additional instructions for
+figures and tables in Chang et al. (2026+), Section 5, Appendix F.1, and
+Appendix F.2, see folder `real_data`. Additional instructions for
 running this code are provided in `real_data/README.txt`.
 
 This is an analysis of weekly email data at a medium-sized manufacturing
@@ -179,47 +179,47 @@ Data preprocessing, analysis, and comparison to existing models are
 contained in 3 scripts.
 
 1.  `real_data/data_checking_man.R`: Loads and preprocesses
-    manufacturing email data, produces Figures S2-S5 (saved to folder
-    `real_data/data_plots_man`). Note data is imported the package
-    `networkDynamicData`.
+    manufacturing email data, produces Figure 1 and Figures S2-S4 (saved
+    to folder `real_data/data_plots_man`). Note data is imported the
+    package `networkDynamicData`.
 
 2.  `real_data/fit_man.R`: fits AR network and competing models to
-    manufacturing email data, produces Figures 1-2 (saved to folder
-    `real_data/fit_plots_man`), produces Table 2 (saved to
+    manufacturing email data, produces Figures 2-3 (saved to folder
+    `real_data/fit_plots_man`) and Table 2 (saved to
     `real_data/data/ics_man1.rds` and `real_data/data/ics_man1.rds`).
     Note code sections 2 (model fitting) and 4 (forecast model fitting)
     can be skipped, results are cached and saved to folder
     `real_data/data`.
 
 3.  `real_data/fit_man_tergm.R`: fits comparative STERGM models to
-    manufacturing email data, produces Figures S6-7 (saved to folder
+    manufacturing email data, produces Figures S5-6 (saved to folder
     `real_data/fit_plots_man`).
 
 ## Real Data Example 2: Conference Interaction Data
 
 This repository contains data and code to reproduce the analysis and
-figures and tables in Chang et al. (2026+), Appendix E.3, see folder
+figures and tables in Chang et al. (2026+), Appendix F.3, see folder
 `real_data`. Additional instructions for running this code are provided
 in `real_data/README.txt`.
 
 This is an analysis of face-to-face interactions among attendees the
-2009 congress of the Soci'{e}t'{e} Franaise d’Hygi\`{e}ne
-Hospitali\`{e}re (SFHH). Note that all scripts run independently inside
-`arnetworks.RProj`, and all scripts will source additional helper
-functions in `real_data/realdataFunctions.R`. This example has
-additional package dependencies not required for the main `arnetworks`
-package: `latex2exp`, `pROC`.
+2009 congress of the Société Française d’Hygiène Hospitalière (SFHH).
+Note that all scripts run independently inside `arnetworks.RProj`, and
+all scripts will source additional helper functions in
+`real_data/realdataFunctions.R`. This example has additional package
+dependencies not required for the main `arnetworks` package:
+`latex2exp`, `pROC`.
 
 Data preprocessing and analysis are contained in 2 scripts.
 
 1.  `real_data/data_checking_sfhh.R`: Loads and preprocesses conference
-    interaction data, produces Figures S8-S9 (saved to folder
+    interaction data, produces Figures S7-S8 (saved to folder
     `real_data/data_plots_sfhh`). Raw data is included in the repository
     (`real_data/data/tij_SFHH.dat_.gz`).
 
 2.  `real_data/fit_sfhh.R`: fits AR network and competing models to
-    conference interaction data, produces Figure S10 (saved to folder
-    `real_data/fit_plots_sfhh`), produces Table S4 (saved to
+    conference interaction data, produces Figure S9 (saved to folder
+    `real_data/fit_plots_sfhh`) and Table S4 (saved to
     `real_data/data/ics_sfhh.rds`). Note code section 1 (model fitting)
     can be skipped, results are cached and saved to folder
     `real_data/data`.
