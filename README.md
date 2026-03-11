@@ -5,7 +5,7 @@
 
 The goal of arnetworks is to simulate, estimate and predict from
 autoregressive (AR) network models with edge dependence, following the
-framework specified in Chang et al. (2024+).
+framework specified in Chang et al. (2026+).
 
 ## Installation
 
@@ -20,7 +20,7 @@ You can install the development version of arnetworks from
 ## Example 1: Transitivity Model
 
 The package provides a detailed implementation for fitting a particular
-AR network model with transitivity effects (see **Chang et al. (2024+),
+AR network model with transitivity effects (see **Chang et al. (2026+),
 Section 4.3**). This is a basic example which shows how to simulate,
 estimate and predict with this model.
 
@@ -50,15 +50,15 @@ fit1 = estTransitivity(X, U, V, tauSeq_a = 0.3, tauSeq_b = 0.3, tauSeq_xi = 0.05
 
 # global parameters for edge formation and dissoluton
 print(fit1$gVal)
-#> [1]  9.208339 10.220692
+#> [1]  9.350807 10.301467
 # local parameters for edge formation (quartiles)
 print(quantile(fit1$xi))
 #>        0%       25%       50%       75%      100% 
-#> 0.6945489 0.7727419 0.8257124 0.8641816 0.9426902
+#> 0.6680081 0.7736963 0.8196326 0.8676138 0.9690946
 # local parameters for edge formation (quartiles)
 print(quantile(fit1$eta))
 #>        0%       25%       50%       75%      100% 
-#> 0.8499758 0.8883862 0.9111250 0.9411023 0.9786972
+#> 0.8328370 0.8878001 0.9124410 0.9291489 1.0026133
 
 # note that the same global parameters are shared by the edge formation and dissolution models
 
@@ -80,9 +80,9 @@ pred1 = predictTransitivity(fit1,Xnew,nStep=2)
 The package also allows users to **specify their own AR network models**
 with both local and global parameters. This is a basic example which
 shows how to simulate, estimate and predict with the **persistence
-model** (see Chang et al. (2024+), Section 4.2). For an additional
+model** (see Chang et al. (2026+), Section 4.2). For an additional
 example on how to estimate and predict with the **transitivity model**,
-please see the documenation for `estNet`.
+please see the documentation for `estNet`.
 
 ``` r
 library(arnetworks)
@@ -133,18 +133,18 @@ fit2 <- estNet(X, fij, gij,
 
 # global parameter for edge formation
 print(fit2$gAlphaVal)
-#> [1] 0.5103177
+#> [1] 0.5354474
 # global parameter for edge dissolution
 print(fit2$gBetaVal)
-#> [1] 0.483452
+#> [1] 0.5132621
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$xi))
 #>        0%       25%       50%       75%      100% 
-#> 0.4659019 0.5964992 0.6953642 0.7907144 0.9284358
+#> 0.4644491 0.5674790 0.6582072 0.7689832 0.9411632
 # local parameters for edge formation (quartiles)
 print(quantile(fit2$eta))
 #>        0%       25%       50%       75%      100% 
-#> 0.4726406 0.6121069 0.6951797 0.7897641 0.9211895
+#> 0.4712537 0.6327108 0.7219313 0.8025268 0.9713226
 
 # Predict the next network snapshot
 
@@ -160,3 +160,66 @@ pred2 = predictNet(fit2,Xnew,statsAlphaNew,statsBetaNew,fij,gij)
 # Note that Xnew (the final snapshot of the observed network data) is a p x p matrix, while 
 # statsAlphaNew and statsBetaNew are p x p x 1 arrays
 ```
+
+## Real Data Example 1: Manufacturing Email Data
+
+This repository contains data and code to reproduce the analysis and
+figures and tables in Chang et al. (2026+), Section 5, Appendix E.1, and
+Appendix E.2, see folder `real_data`. Additional instructions for
+running this code are provided in `real_data/README.txt`.
+
+This is an analysis of weekly email data at a medium-sized manufacturing
+company from January to September 2010. All scripts run independently
+inside `arnetworks.RProj`, and source additional helper functions in
+`real_data/realdataFunctions.R`. This example has additional package
+dependencies not required for the main `arnetworks` package:
+`latex2exp`, `networkDynamicData`, `pROC`, and `statnet`.
+
+Data preprocessing, analysis, and comparison to existing models are
+contained in 3 scripts.
+
+1.  `real_data/data_checking_man.R`: Loads and preprocesses
+    manufacturing email data, produces Figures S2-S5 (saved to folder
+    `real_data/data_plots_man`). Note data is imported the package
+    `networkDynamicData`.
+
+2.  `real_data/fit_man.R`: fits AR network and competing models to
+    manufacturing email data, produces Figures 1-2 (saved to folder
+    `real_data/fit_plots_man`), produces Table 2 (saved to
+    `real_data/data/ics_man1.rds` and `real_data/data/ics_man1.rds`).
+    Note code sections 2 (model fitting) and 4 (forecast model fitting)
+    can be skipped, results are cached and saved to folder
+    `real_data/data`.
+
+3.  `real_data/fit_man_tergm.R`: fits comparative STERGM models to
+    manufacturing email data, produces Figures S6-7 (saved to folder
+    `real_data/fit_plots_man`).
+
+## Real Data Example 2: Conference Interaction Data
+
+This repository contains data and code to reproduce the analysis and
+figures and tables in Chang et al. (2026+), Appendix E.3, see folder
+`real_data`. Additional instructions for running this code are provided
+in `real_data/README.txt`.
+
+This is an analysis of face-to-face interactions among attendees the
+2009 congress of the Soci'{e}t'{e} Franaise d’Hygi\`{e}ne
+Hospitali\`{e}re (SFHH). Note that all scripts run independently inside
+`arnetworks.RProj`, and all scripts will source additional helper
+functions in `real_data/realdataFunctions.R`. This example has
+additional package dependencies not required for the main `arnetworks`
+package: `latex2exp`, `pROC`.
+
+Data preprocessing and analysis are contained in 2 scripts.
+
+1.  `real_data/data_checking_sfhh.R`: Loads and preprocesses conference
+    interaction data, produces Figures S8-S9 (saved to folder
+    `real_data/data_plots_sfhh`). Raw data is included in the repository
+    (`real_data/data/tij_SFHH.dat_.gz`).
+
+2.  `real_data/fit_sfhh.R`: fits AR network and competing models to
+    conference interaction data, produces Figure S10 (saved to folder
+    `real_data/fit_plots_sfhh`), produces Table S4 (saved to
+    `real_data/data/ics_sfhh.rds`). Note code section 1 (model fitting)
+    can be skipped, results are cached and saved to folder
+    `real_data/data`.
